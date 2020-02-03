@@ -1,5 +1,9 @@
+import axios from 'axios';
+import endPoints from '../end-points';
+
 export default {
     state: {
+        shopInfo: {},
         salableProducts: [
             {
                 id: 1,
@@ -119,16 +123,57 @@ export default {
                 type: 'sell',
             }
         ],
-        shopInfo: {},
+        purchasableProducts: [],
     },
     getters: {
+        GET_SHOP_INFO: (state) => {
+            return state.shopInfo;
+        },
         GET_SALABLE_PRODUCTS: (state) => {
             return state.salableProducts;
         },
-        GET_SHOP_INFO: (state) => {
-            return state.shopInfo;
-        }
+        GET_PURCHASABLE_PRODUCTS: (state) => {
+            return state.purchasableProducts;
+        },
     },
-    mutations: {},
-    actions: {}
+    mutations: {
+        SET_SHOP_INFO: (state, payload) => {
+            state.shopInfo = payload || {};
+        },
+        SET_SALABLE_PRODUCTS: (state, payload) => {
+            state.salableProducts = payload || [];
+        },
+        SET_PURCHASABLE_PRODUCTS: (state, payload) => {
+            state.purchasableProducts = payload || [];
+        },
+    },
+    actions: {
+        GET_SHOP_INFO: async ({commit}) => {
+            try {
+                let response = await axios.get(endPoints.SHOP_INFO);
+                commit('SET_SHOP_INFO', response.data);
+                return Promise.resolve('Ok');
+            } catch (error) {
+                return Promise.reject(error.response.data);
+            }
+        },
+        GET_SALABLE_PRODUCTS: async ({commit}) => {
+            try {
+                let response = await axios.get(endPoints.SALABLE_PRODUCTS);
+                commit('SET_SALABLE_PRODUCTS', response.data);
+                return Promise.resolve('Ok');
+            } catch (error) {
+                return Promise.reject(error.response.data);
+            }
+        },
+        GET_PURCHASABLE_PRODUCTS: async ({commit}) => {
+            try {
+                let response = await axios.get(endPoints.PURCHASABLE_PRODUCTS);
+                commit('SET_PURCHASABLE_PRODUCTS', response.data);
+                return Promise.resolve('Ok');
+            } catch (error) {
+                return Promise.reject(error.response.data);
+            }
+        },
+    }
 }
