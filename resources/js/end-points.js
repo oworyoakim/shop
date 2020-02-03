@@ -9,4 +9,7 @@ export default {
     ITEMS: '/items',
     BRANCHES: '/branches',
     FORM_SELECTION_OPTIONS: '/form-selection-options',
+    SALABLE_PRODUCTS: '/salable-products',
+    PURCHASABLE_PRODUCTS: '/purchasable-products',
+    SHOP_INFO: '/shop-info',
 }

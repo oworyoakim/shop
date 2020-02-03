@@ -11,10 +11,7 @@
           content="Point of Sale System, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
     <meta name="description" content="Cutting Edge solution for perfect PoS Businesses and Outlets."/>
     <meta name="author" content="Owor Yoakim"/>
-{{--    <!-- Google Font -->--}}
-{{--    <link rel="stylesheet"--}}
-{{--          href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic">--}}
-    <!-- App Styles -->
+<!-- App Styles -->
     <link rel="stylesheet" href="/css/app.css">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -34,16 +31,16 @@
         />
     </header>
     <aside class="main-sidebar">
-        <app-sidebar></app-sidebar>
+        <app-sidebar/>
     </aside>
     <div class="content-wrapper">
         <!-- Main content -->
         <section class="content">
-            <app-container></app-container>
+            <app-container/>
         </section>
     </div>
     <footer class="main-footer">
-        <app-footer></app-footer>
+        <app-footer/>
     </footer>
 </div>
 <!-- ./wrapper -->
