@@ -22,6 +22,7 @@ import SettingsComponent from "./components/admin/settings/Settings";
 import ReportsComponent from "./components/admin/reports/Reports";
 import SalesReportComponent from "./components/admin/reports/Sales";
 import BranchesComponent from "./components/admin/branches/Branches";
+import SuppliersComponent from "./components/admin/items/Suppliers";
 
 
 Vue.use(VueRouter);
@@ -89,6 +90,7 @@ const routes = [
             {path: 'branches', name: 'branches', component: BranchesComponent},
             {path: 'roles', name: 'roles', component: RolesComponent},
             {path: 'settings', name: 'settings', component: SettingsComponent},
+            {path: 'suppliers', name: 'suppliers', component: SuppliersComponent},
             {
                 path: 'reports',
                 component: ReportsComponent,

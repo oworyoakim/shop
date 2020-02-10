@@ -29,12 +29,20 @@ Route::group(['middleware' => ['ensure.authenticated']], function () {
             Route::get('/salable-products', 'HomeController@getSalableProducts')->name('salable-products');
             Route::get('/purchasable-products', 'HomeController@getPurchasableProducts')->name('purchasable-products');
             Route::get('/get-item-by-barcode', 'HomeController@getItemByBarcode')->name('get-item-by-barcode');
+            Route::get('/countries', 'HomeController@getCountries')->name('countries');
 
             Route::group(['prefix' => 'units'], function () {
                 Route::get('', 'UnitsController@index')->name('units');
                 Route::post('', 'UnitsController@store')->name('units.create');
                 Route::put('', 'UnitsController@update')->name('units.update');
                 Route::delete('', 'UnitsController@delete')->name('units.delete');
+            });
+
+            Route::group(['prefix' => 'suppliers'], function () {
+                Route::get('', 'SuppliersController@index')->name('suppliers');
+                Route::post('', 'SuppliersController@store')->name('suppliers.create');
+                Route::put('', 'SuppliersController@update')->name('suppliers.update');
+                Route::delete('', 'SuppliersController@delete')->name('suppliers.delete');
             });
 
             Route::group(['prefix' => 'categories'], function () {

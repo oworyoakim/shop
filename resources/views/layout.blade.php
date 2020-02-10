@@ -44,7 +44,8 @@
     </footer>
 </div>
 <!-- ./wrapper -->
-<script src="/js/app.js"></script>
+<!-- <script src="/js/app.js"></script> -->
+<script src="{{ in_array(env('APP_ENV'),['development','local','test','staging']) ? mix('js/app.js') : asset('js/app.js') }}"></script>
 <script>
     @if(session('success'))
     toastr.success('{{session('success')}}');

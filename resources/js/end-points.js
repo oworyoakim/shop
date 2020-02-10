@@ -17,4 +17,6 @@ export default {
     CANCEL_SALE_TRANSACTION: '/pos/cancel-sale-transaction',
     COMPLETE_PURCHASE_TRANSACTION: '/stores/complete-purchase-transaction',
     CANCEL_PURCHASE_TRANSACTION: '/stores/cancel-purchase-transaction',
+    SUPPLIERS: '/suppliers',
+    COUNTRIES: '/countries',
 }

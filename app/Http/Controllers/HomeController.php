@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Repositories\ISystemRepository;
+use App\Models\Country;
 use Cartalyst\Sentinel\Laravel\Facades\Sentinel;
 use Exception;
 use Illuminate\Http\Request;
@@ -134,4 +135,16 @@ class HomeController extends Controller
         }
     }
 
+    public function getCountries(Request $request)
+    {
+        try
+        {   
+            $countries = Country::all(['id','code','name', 'phonecode']);
+            return response()->json($countries);
+        } catch (Exception $ex)
+        {
+            Log::error("GET_COUNTRIES: {$ex->getMessage()}");
+            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+        }
+    }
 }
