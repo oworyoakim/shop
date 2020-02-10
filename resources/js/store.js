@@ -6,6 +6,7 @@ import rolesModule from "./stores/roles";
 import unitsModule from "./stores/units";
 import categoriesModule from "./stores/categories";
 import itemsModule from "./stores/items";
+import suppliersModule from "./stores/suppliers";
 import branchesModule from "./stores/branches";
 import shopModule from "./stores/shop";
 
@@ -20,6 +21,7 @@ export default new Vuex.Store({
             suppliers: [],
             customers: [],
         },
+        countries:[],
     },
     getters: {
         GET_USER: (state) => {
@@ -28,6 +30,9 @@ export default new Vuex.Store({
         GET_FORM_SELECTION_OPTIONS: (state) => {
             return state.formSelectionOptions;
         },
+        GET_COUNTRIES:(state) => {
+            return state.countries;
+        }
     },
     mutations: {
         SET_USER_DATA: (state, payload) => {
@@ -35,6 +40,9 @@ export default new Vuex.Store({
         },
         SET_FORM_SELECTION_OPTIONS: (state, payload) => {
             state.formSelectionOptions = payload;
+        },
+        SET_COUNTRIES: (state, payload) => {
+            state.countries = payload;
         },
     },
     actions: {
@@ -72,6 +80,15 @@ export default new Vuex.Store({
                 return Promise.reject(error.response.data);
             }
         },
+        GET_COUNTRIES: async ({commit}) => {
+            try {
+                let response = await axios.get(endPoints.COUNTRIES);
+                commit("SET_COUNTRIES", response.data);
+                return Promise.resolve("Ok");
+            } catch (error) {
+                return Promise.reject(error.response.data);
+            }
+        },
     },
     modules: {
         roles: rolesModule,
@@ -80,5 +97,6 @@ export default new Vuex.Store({
         items: itemsModule,
         branches: branchesModule,
         shop: shopModule,
+        suppliers: suppliersModule,
     }
 });
