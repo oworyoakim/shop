@@ -1,0 +1,36 @@
+RUN apt-get update
+RUN apt-get install -y nano apt-utils curl zip zlib1g-dev libzip-dev
+
+# Install extensions
+RUN docker-php-ext-install mysqli pdo_mysql mbstring opcache zip
+
+## Install Composer
+RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer
+RUN php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN rm -f /tmp/composer-setup.*
+
+
+## Virtual Host Configuration
+COPY ./docker/apache2/laravel-docker.conf /etc/apache2/sites-available
+RUN a2dissite 000-default.conf
+RUN a2ensite laravel-docker.conf
+RUN a2enmod rewrite
+RUN service apache2 restart
+
+## MPM Prefork Condiguration
+COPY ./docker/apache2/mpm_prefork.conf /etc/apache2/mods-available
+RUN service apache2 restart
+
+##  Application Specific commands
+RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chmod -R 775 storage bootstrap/cache
+RUN php artisan key:generate
+
+
+docker service create --name loadbalancer --mount type=bind,source=/root/data/loadbalancer,target=/etc/nginx/conf.d --publish 8085:80 nginx
+
+
+
+
+
+

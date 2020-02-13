@@ -8,7 +8,6 @@ use Illuminate\Support\Carbon;
 use Cartalyst\Sentinel\Laravel\Facades\Sentinel;
 use Exception;
 use stdClass;
-use DNS1D;
 
 class SuppliersController extends Controller
 {

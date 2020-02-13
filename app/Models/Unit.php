@@ -4,7 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * Class Unit
+ * @package App\Models
+ * @property int id
+ * @property string title
+ * @property string slug
+ * @property string description
+ * @property int user_id
+ * @property Carbon created_at
+ * @property Carbon updated_at
+ * @property Carbon deleted_at
+ */
 class Unit extends Model
 {
     use SoftDeletes;
@@ -16,11 +29,11 @@ class Unit extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class,'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function items()
     {
-        return $this->hasMany(Item::class,'unit_id');
+        return $this->hasMany(Item::class, 'unit_id');
     }
 }

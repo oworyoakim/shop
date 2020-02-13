@@ -4,7 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * Class Category
+ * @package App\Models
+ * @property int id
+ * @property string title
+ * @property string slug
+ * @property string description
+ * @property int user_id
+ * @property Carbon created_at
+ * @property Carbon updated_at
+ * @property Carbon deleted_at
+ */
 class Category extends Model
 {
     use SoftDeletes;

@@ -51,7 +51,31 @@
             <router-link to="/admin/branches" tag="li" active-class="active">
                 <a>
                     <i class="fa fa-building"></i>
-                    <span>Manage Branches</span>
+                    <span>Branches</span>
+                    <span class="pull-right-container">
+                        <i class="fa fa-angle-left pull-right"></i>
+                    </span>
+                </a>
+            </router-link>
+        </ul>
+
+        <ul class="sidebar-menu">
+            <router-link to="/stores/purchase" tag="li" active-class="active">
+                <a>
+                    <i class="fa fa-shopping-basket"></i>
+                    <span>Purchase</span>
+                    <span class="pull-right-container">
+                        <i class="fa fa-angle-left pull-right"></i>
+                    </span>
+                </a>
+            </router-link>
+        </ul>
+
+        <ul class="sidebar-menu">
+            <router-link to="/stores/stocks" tag="li" active-class="active">
+                <a>
+                    <i class="fa fa-shopping-bag"></i>
+                    <span>Stocks</span>
                     <span class="pull-right-container">
                         <i class="fa fa-angle-left pull-right"></i>
                     </span>

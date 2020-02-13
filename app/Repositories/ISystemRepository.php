@@ -17,6 +17,10 @@ interface ISystemRepository
 
     public function set($key, $value);
 
+    public function getItemByBarcode(string $barcode);
+
+    public function getSalableItems(int $branch_id = null);
+
     public function getStocks(int $branch_id = null);
 
     public function getItemStock(int $item_id, $branch_id = null);

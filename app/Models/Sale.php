@@ -6,14 +6,47 @@ use App\Traits\Commentable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * Class Sale
+ * @package App/Models
+ * @property int id
+ * @property string transcode
+ * @property  int user_id
+ * @property  int branch_id
+ * @property  int customer_id
+ * @property  double gross_amount
+ * @property  float vat_rate
+ * @property  double vat_amount
+ * @property  float discount_rate
+ * @property  double discount_amount
+ * @property  double net_amount
+ * @property string status
+ * @property  string payment_status
+ * @property  string receipt
+ * @property  Carbon transact_date
+ * @property  Carbon created_at
+ * @property  Carbon updated_at
+ * @property  Carbon deleted_at
+ */
 class Sale extends Model
 {
     use SoftDeletes, Commentable;
     protected $table = 'sales';
     protected $dates = ['deleted_at', 'transact_date'];
-
     protected $guarded = [];
+
+    const STATUS_PENDING = 'pending';
+    const STATUS_CANCELED = 'canceled';
+    const STATUS_COMPLETED = 'completed';
+    const STATUS_PARTIALLY_RETURNED = 'partially_returned';
+    const STATUS_FULLY_RETURNED = 'fully_returned';
+
+    const PAYMENT_STATUS_PENDING = 'pending';
+    const PAYMENT_STATUS_PARTIAL = 'partial';
+    const PAYMENT_STATUS_SETTLED = 'settled';
+    const PAYMENT_STATUS_CANCELED = 'canceled';
 
     public function orderlines()
     {
@@ -61,27 +94,27 @@ class Sale extends Model
 
     public function scopeCanceled(Builder $query)
     {
-        return $query->where('status', 'canceled');
+        return $query->where('status', self::STATUS_CANCELED);
     }
 
     public function scopeUncanceled(Builder $query)
     {
-        return $query->whereNotIn('status', ['canceled']);
+        return $query->whereNotIn('status', [self::STATUS_CANCELED]);
     }
 
     public function scopeSettled(Builder $query)
     {
-        return $this->scopeUncanceled($query)->where('payment_status', ['settled']);
+        return $this->scopeUncanceled($query)->where('payment_status', self::PAYMENT_STATUS_SETTLED);
     }
 
     public function scopeReceivables(Builder $query)
     {
-        return $this->scopeUncanceled($query)->where('payment_status', 'partial');
+        return $this->scopeUncanceled($query)->where('payment_status', self::PAYMENT_STATUS_PARTIAL);
     }
 
     public function scopeReturned(Builder $query)
     {
-        return $query->whereIn('status', ['partially_returned', 'fully_returned']);
+        return $query->whereIn('status', [self::STATUS_PARTIALLY_RETURNED, self::STATUS_FULLY_RETURNED]);
     }
 
     public function daysReturnedSales(Builder $query, $date)
@@ -92,7 +125,7 @@ class Sale extends Model
     public function returnsInwards()
     {
         return $this->orderlines()
-                    ->whereIn('status', ['partial', 'returned'])
+                    ->whereIn('status', [SaleItem::STATUS_PARTIAL, SaleItem::STATUS_RETURNED])
                     ->get()
                     ->reduce(function (SaleItem $orderline, $amount) {
                         return $amount + $orderline->returnsInwardsAmount();

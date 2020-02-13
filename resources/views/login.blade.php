@@ -23,16 +23,15 @@
     <![endif]-->
     <title>{{settings()->get('company_name')}} - Authorization</title>
 </head>
-<body class="hold-transition login-page"
-      style="background: url('/images/login-register.jpg'); background-repeat: repeat; background-size: 50% 50%; background-color: #0c5460;">
+<body class="hold-transition login-page" style="background-color: #ffffff;">
 <div class="login-box" id="main-app">
-    <div class="login-logo">
-        <h1 class="text-red">
-            <a href="#" style="color: #c4def1;" class="btn-link">
-                <b><span>{{ settings()->get('company_name') }}</span></b>
-            </a>
-        </h1>
-    </div>
+{{--    <div class="login-logo">--}}
+{{--        <h1 class="text-small">--}}
+{{--            <a href="#" style="color: #000000;" class="btn-link">--}}
+{{--                <b><span>{{ settings()->get('company_name') }}</span></b>--}}
+{{--            </a>--}}
+{{--        </h1>--}}
+{{--    </div>--}}
     <!-- /.login-logo -->
     <app-login
         return-url="{{request()->session()->get('url.intended')}}"

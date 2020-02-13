@@ -117,15 +117,10 @@ class ItemsController extends Controller
             if (!$barcode)
             {
                 // generate unique barcode
-                do
-                {
-                    $time = str_shuffle((string)Carbon::now()->getTimestamp());
-                    $rand = str_shuffle((string)random_int(900000, 999999));
-                    $barcode = str_shuffle(strrev($rand . '' . $user->getUserId() . '' . $time));
-                    $itemsCount = Item::query()->where('barcode', $barcode)->count();
-                    $firstChar = substr($barcode, 0, 1);
-                    $lastChar = substr($barcode, -1, 1);
-                } while ($itemsCount > 0 || $firstChar == '0' || $lastChar == '0');
+                $barcode = Item::generateBarcode($user);
+            } elseif (Item::exists($barcode))
+            {
+                throw new Exception("The barcode {$barcode} already exists. Enter a new barcode or leave it blank to be assigned one automatically!");
             }
             $title = $request->get('title');
             $description = $request->get('description');
@@ -294,16 +289,18 @@ class ItemsController extends Controller
         {
             $branchId = $request->get('branch_id');
             $branch = Branch::query()->find($branchId);
-            if($branch){
+            if ($branch)
+            {
                 $items = $this->repository->getSalableItems($branch->id);
-            }else{
+            } else
+            {
                 $items = $this->repository->getSalableItems();
             }
             return response()->json($items);
         } catch (Exception $ex)
         {
             Log::error("GET_SALABLE_ITEMS: {$ex->getMessage()}");
-            return response()->json( $ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
         }
     }
 
@@ -313,16 +310,18 @@ class ItemsController extends Controller
         {
             $branchId = $request->get('branch_id');
             $branch = Branch::query()->find($branchId);
-            if($branch){
+            if ($branch)
+            {
                 $items = $this->repository->getPurchasableItems($branch->id);
-            }else{
+            } else
+            {
                 $items = $this->repository->getPurchasableItems();
             }
             return response()->json($items);
         } catch (Exception $ex)
         {
             Log::error("GET_SALABLE_ITEMS: {$ex->getMessage()}");
-            return response()->json( $ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
         }
     }
 
@@ -332,16 +331,18 @@ class ItemsController extends Controller
         {
             $branchId = $request->get('branch_id');
             $branch = Branch::query()->find($branchId);
-            if($branch){
+            if ($branch)
+            {
                 $stocks = $this->repository->getStocks($branch->id);
-            }else{
+            } else
+            {
                 $stocks = $this->repository->getStocks();
             }
             return response()->json($stocks);
         } catch (Exception $ex)
         {
             Log::error("GET_STOCKS: {$ex->getMessage()}");
-            return response()->json( $ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
         }
     }
 }

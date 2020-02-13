@@ -24,7 +24,7 @@ class CreateSaleItemsTable extends Migration
             $table->decimal('net_amount',15,2)->default(0.00);
             $table->decimal('discount_rate',15,2)->default(0.00);
             $table->decimal('discount_amount',15,2)->default(0.00);
-            $table->enum('status',['complete','partial','returned','canceled'])->default('complete');
+            $table->enum('status',['pending','completed','partial','returned','canceled'])->default('completed');
             $table->text('comment')->nullable();
             $table->timestamps();
             $table->softDeletes();

@@ -1,7 +1,7 @@
 <template>
-    <div class="login-box-body">
+    <div class="login-box-body shadow p-3 mb-5">
         <p v-if="resettingPassword" class="login-box-msg text-uppercase">Recover password</p>
-        <p v-else class="login-box-msg text-uppercase">Sign in to start your session</p>
+        <p v-else class="login-box-msg text-uppercase text-bold">Sign in to start your session</p>
         <div v-if="!!message" class="alert alert-danger text-center">{{message}}</div>
         <div v-else-if="!!errorMessage" class="alert alert-danger text-center">{{errorMessage}}</div>
         <template v-if="resettingPassword">
@@ -36,7 +36,7 @@
                            placeholder='Username'
                            autocomplete="off"
                            required>
-                    <span class="fa fa-envelope fa-2x form-control-feedback"></span>
+                    <span class="fa fa-user-circle fa-2x form-control-feedback"></span>
                 </div>
                 <div class="form-group has-feedback">
                     <input v-model="credentials.loginPassword"
@@ -48,19 +48,19 @@
                     <span class="fa fa-lock fa-2x form-control-feedback"></span>
                 </div>
                 <div class="row">
-                    <div class="col-12">
-                        <div class="fog-pwd">
-                            <a @click="resettingPassword = true" href="javascript:void(0)"><i class="ion ion-locked"></i> Forgot password?</a><br>
-                        </div>
-                    </div>
                     <!-- /.col -->
                     <div class="col-12 text-center">
                         <button type="submit"
                                 :disabled="isSending || !(!!credentials.loginName.trim() && !!credentials.loginPassword.trim())"
-                                class="btn btn-info btn-lg btn-block margin-top-10 text-uppercase">Login!
+                                class="btn btn-info btn-lg btn-block margin-top-10 text-uppercase">Login
                         </button>
                     </div>
                     <!-- /.col -->
+                    <div class="col-12 mt-2 text-right text-info">
+                        <div class="fog-pwd">
+                            <a @click="resettingPassword = true" class="text-info" href="javascript:void(0)"><i class="ion ion-locked"></i> Forgot password?</a><br>
+                        </div>
+                    </div>
                 </div>
             </form>
         </template>

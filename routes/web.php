@@ -26,6 +26,9 @@ Route::group(['middleware' => ['ensure.authenticated']], function () {
             Route::post('/logout', 'AccountController@logout')->name('logout');
             Route::get('/user-data', 'HomeController@getUserData')->name('user-data');
             Route::get('/form-selection-options', 'HomeController@getFormSelectionOptions')->name('form-selection-options');
+            Route::get('/salable-products', 'HomeController@getSalableProducts')->name('salable-products');
+            Route::get('/purchasable-products', 'HomeController@getPurchasableProducts')->name('purchasable-products');
+            Route::get('/get-item-by-barcode', 'HomeController@getItemByBarcode')->name('get-item-by-barcode');
 
             Route::group(['prefix' => 'units'], function () {
                 Route::get('', 'UnitsController@index')->name('units');
@@ -73,6 +76,17 @@ Route::group(['middleware' => ['ensure.authenticated']], function () {
                 Route::put('', 'RolesController@update')->name('roles.update');
                 Route::patch('', 'RolesController@updatePermissions')->name('roles.update_permissions');
                 Route::delete('', 'RolesController@delete')->name('roles.delete');
+            });
+
+            Route::group(['prefix' => 'pos'], function () {
+                Route::get('shop-info', 'CashierController@getShopInfo')->name('pos');
+                Route::post('complete-sale-transaction', 'StoreSaleController')->name('pos.create_sale');
+                Route::patch('cancel-sale-transaction', 'CashierController@cancelSaleTransaction')->name('pos.cancel_sale');
+            });
+
+            Route::group(['prefix' => 'stores'], function () {
+                Route::post('complete-purchase-transaction', 'StorePurchaseController')->name('pos.create_purchase');
+                Route::patch('cancel-purchase-transaction', 'CashierController@cancelPurchaseTransaction')->name('pos.cancel_purchase');
             });
 
 

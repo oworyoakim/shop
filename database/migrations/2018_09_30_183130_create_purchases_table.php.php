@@ -15,8 +15,9 @@ class CreatePurchasesTable extends Migration
     {
         Schema::create('purchases', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedBigInteger('transcode')->unique();
+            $table->string('transcode')->unique();
             $table->timestamp('transact_date');
+            $table->unsignedInteger('purchase_order_id')->nullable();
             $table->unsignedInteger('supplier_id')->nullable();
             $table->unsignedInteger('branch_id')->nullable();
             $table->decimal('gross_amount',15,2)->default(0.00);
@@ -25,7 +26,7 @@ class CreatePurchasesTable extends Migration
             $table->decimal('discount_rate',5,2)->default(0.00);
             $table->decimal('discount_amount',15,2)->default(0.00);
             $table->decimal('net_amount',15,2)->default(0.00);
-            $table->enum('status',['pending','received','partially_returned','fully_returned','canceled'])->default('received');
+            $table->enum('status',['pending','completed','partially_returned','fully_returned','canceled'])->default('completed');
             $table->enum('payment_status',['settled','partial','pending','canceled'])->default('settled');
             $table->string('receipt')->nullable();
             $table->unsignedInteger('user_id')->nullable();

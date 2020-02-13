@@ -15,7 +15,7 @@ class CreatePurchaseOrdersTable extends Migration
     {
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('purchase_order_code')->unique();
+            $table->string('order_code')->unique();
             $table->timestamp('order_date');
             $table->unsignedInteger('supplier_id')->nullable();
             $table->unsignedInteger('branch_id')->nullable();

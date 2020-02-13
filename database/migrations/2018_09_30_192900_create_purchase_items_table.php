@@ -24,7 +24,8 @@ class CreatePurchaseItemsTable extends Migration
             $table->decimal('net_amount',15,2)->default(0.00);
             $table->decimal('discount_rate',15,2)->default(0.00);
             $table->decimal('discount_amount',15,2)->default(0.00);
-            $table->enum('status',['complete','partial','returned','canceled'])->default('complete');
+            $table->timestamp('expiry_date')->nullable();
+            $table->enum('status',['completed','partial','returned','canceled','pending'])->default('completed');
             $table->timestamps();
             $table->softDeletes();
             $table->unique(['purchase_id','item_id']);

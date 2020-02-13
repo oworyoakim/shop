@@ -1,8 +1,8 @@
 <template>
-    <div>
+    <div class="container-fluid">
         <div class="pull-right d-none d-sm-inline-block">
         </div>
-        &copy; <a href="#">RogoSoft, Inc.</a>
+        Copyright &copy; {{$moment().format('YYYY')}} <a href="#">Rogosoft Inc.</a>
     </div>
 </template>
 

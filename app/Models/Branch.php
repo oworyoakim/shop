@@ -6,6 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
+
+/**
+ * Class Branch
+ * @package App\Models
+ * @property int id
+ * @property string name
+ * @property string email
+ * @property string phone
+ * @property string city
+ * @property string country
+ * @property string address
+ * @property bool active
+ * @property int user_id
+ * @property Carbon created_at
+ * @property Carbon updated_at
+ * @property Carbon deleted_at
+ */
 class Branch extends Model
 {
 
@@ -13,6 +30,9 @@ class Branch extends Model
 
     protected $table = "branches";
     protected $dates = ['deleted_at'];
+
+    const STATUS_ACTIVE = true;
+    const STATUS_INACTIVE = false;
 
     protected $guarded = [];
 
