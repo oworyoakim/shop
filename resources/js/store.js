@@ -17,6 +17,8 @@ export default new Vuex.Store({
         formSelectionOptions: {
             categories: [],
             units: [],
+            suppliers: [],
+            customers: [],
         },
     },
     getters: {

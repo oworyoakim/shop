@@ -8,9 +8,12 @@
 
 namespace App\Repositories;
 
+use App\Models\Item;
+use App\Models\ItemStock;
 use App\Models\Sale;
 use App\Models\Setting;
 use App\Models\Expense;
+use App\Models\Stock;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -22,9 +25,9 @@ class SystemRepository implements ISystemRepository
     {
         $cacheKey = strtoupper(env('CACHE_KEY') . ".settings.{$key}");
         return Cache::remember($cacheKey, Carbon::now()->addHours(1), function () use ($key) {
-            if ($setting = Setting::query()->where('setting_key', $key)->first())
+            if ($setting = Setting::query()->where('key', $key)->first())
             {
-                return $setting->setting_value;
+                return $setting->value;
             }
             return null;
         });
@@ -35,7 +38,7 @@ class SystemRepository implements ISystemRepository
         $cacheKey = strtoupper(env('CACHE_KEY') . ".settings.{$key}");
         Cache::forget($cacheKey);
         Cache::put($cacheKey, $value, Carbon::now()->addHours(1));
-        return Setting::query()->updateOrCreate(['setting_key' => $key], ['setting_value' => $value]);
+        return Setting::query()->updateOrCreate(['key' => $key], ['value' => $value]);
     }
 
     public function beginTransaction()
@@ -55,133 +58,80 @@ class SystemRepository implements ISystemRepository
 
     public function getItemByBarcode(string $barcode)
     {
-        return DB::table('stocks')
-                 ->select('items.id', 'items.barcode', 'items.title', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.discount','stocks.status', 'stocks.quantity', 'units.slug as unit', 'categories.title as category')
-                 ->leftJoin('items', 'items.id', '=', 'stocks.item_id')
-                 ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                 ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                 ->where('items.barcode', $barcode)
-                 ->where('stocks.status', '=', 'active')
-                 ->first();
+        $builder = ItemStock::query();
+        $builder->where('status', Stock::STATUS_ACTIVE);
+        $builder->where(function ($query) use ($barcode) {
+            $query->where('secondaryBarcode', $barcode)->orWhere('barcode', $barcode);
+        });
+        return $builder->first();
     }
 
     public function getSalableItems(int $branch_id = null)
     {
+        $builder = ItemStock::query();
+        $builder->whereIn('account', [Item::ACCOUNT_SALES_ONLY, Item::ACCOUNT_BOTH]);
+        $builder->where('status', Stock::STATUS_ACTIVE);
         if ($branch_id)
         {
-            return DB::table('stocks')
-                     ->select('items.id', 'items.barcode', 'items.title', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount','stocks.status', 'units.slug as unit', 'categories.title as category')
-                     ->leftJoin('items', 'items.id', '=', 'stocks.item_id')
-                     ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                     ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                     ->where('items.account', '<>', 'purchases')
-                     ->where('stocks.branch_id', $branch_id)
-                     ->where('stocks.status', '=', 'active')
-                     ->get();
+            $builder->where('branchId', $branch_id);
         }
-        return DB::table('stocks')
-                 ->select('items.id', 'items.barcode', 'items.title', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount', 'stocks.status','units.slug as unit', 'categories.title as category')
-                 ->leftJoin('items', 'items.id', '=', 'stocks.item_id')
-                 ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                 ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                 ->where('items.account', '<>', 'purchases')
-                 ->where('stocks.status','=', 'active')
-                 ->get();
+        return $builder->get();
     }
 
     public function getPurchasableItems(int $branch_id = null)
     {
+        $builder = ItemStock::query();
+        $builder->whereIn('account', [Item::ACCOUNT_PURCHASES_ONLY, Item::ACCOUNT_BOTH]);
         if ($branch_id)
         {
-            return DB::table('items')
-                     ->select('items.id', 'items.barcode', 'items.title', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount', 'units.slug as unit', 'categories.title as category')
-                     ->leftJoin('stocks', 'items.id', '=', 'stocks.item_id')
-                     ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                     ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                     ->where('items.account', '<>', 'sales')
-                     ->where('stocks.branch_id', $branch_id)
-                     ->get();
+            $builder->where('branchId', $branch_id);
         }
-        return DB::table('items')
-                 ->select('items.id', 'items.barcode', 'items.title', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount', 'units.slug as unit', 'categories.title as category')
-                 ->leftJoin('stocks', 'items.id', '=', 'stocks.item_id')
-                 ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                 ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                 ->where('items.account', '<>', 'sales')
-                 ->get();
+        return $builder->get();
     }
 
     public function getStocks(int $branch_id = null)
     {
+        $builder = ItemStock::query();
         if ($branch_id)
         {
-            return DB::table('stocks')
-                     ->select('items.id', 'items.barcode', 'items.title', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount','stocks.status', 'units.slug as unit', 'categories.title as category')
-                     ->leftJoin('items', 'items.id', '=', 'stocks.item_id')
-                     ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                     ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                     ->where('stocks.branch_id', $branch_id)
-                     ->get();
+            $builder->where('branchId', $branch_id);
         }
-        return DB::table('stocks')
-                 ->select('items.id', 'items.barcode', 'items.title', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount', 'stocks.status','units.slug as unit', 'categories.title as category')
-                 ->leftJoin('items', 'items.id', '=', 'stocks.item_id')
-                 ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                 ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                 ->get();
+        return $builder->get();
     }
 
     public function getItemStock(int $item_id, $branch_id = null)
     {
-        if($branch_id){
-            return DB::table('stocks')
-                     ->select('items.id', 'items.barcode', 'items.title', 'items.account', 'stocks.branch_id as branch', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount','stocks.status', 'units.slug as unit', 'categories.title as category')
-                     ->leftJoin('items', 'items.id', '=', 'stocks.item_id')
-                     ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                     ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                     ->where('stocks.branch_id', $branch_id)
-                     ->where('stocks.item_id', $item_id)
-                     ->first();
+        $builder = ItemStock::query();
+        $builder->where('id', $item_id);
+        if ($branch_id)
+        {
+            $builder->where('branchId', $branch_id);
         }
-        return DB::table('stocks')
-                 ->select('items.id', 'items.barcode', 'items.title', 'items.account', 'stocks.branch_id as branch', 'stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity', 'stocks.discount','stocks.status', 'units.slug as unit', 'categories.title as category')
-                 ->leftJoin('items', 'items.id', '=', 'stocks.item_id')
-                 ->leftJoin('units', 'items.unit_id', '=', 'units.id')
-                 ->leftJoin('categories', 'items.category_id', '=', 'categories.id')
-                 ->where('stocks.item_id', $item_id)
-                 ->first();
+        return $builder->first();
     }
 
     public function totalSales(Carbon $start_date, Carbon $end_date, $branch_id = null)
     {
+        $builder = Sale::uncanceled();
+        $builder->whereDate('created_at', '>=', $start_date);
+        $builder->whereDate('created_at', '<=', $end_date);
         if ($branch_id)
         {
-            return Sale::uncanceled()
-                       ->where('branch_id', $branch_id)
-                       ->whereDate('created_at', '>=', $start_date)
-                       ->whereDate('created_at', '<=', $end_date)
-                       ->sum('net_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Sale::uncanceled()
-                   ->whereDate('created_at', '>=', $start_date)
-                   ->whereDate('created_at', '<=', $end_date)
-                   ->sum('net_amount');
+        return $builder->sum('net_amount');
     }
 
     public function totalSettled(Carbon $start_date, Carbon $end_date, $branch_id = null)
     {
+        $builder = Sale::settled();
+        $builder->whereDate('created_at', '>=', $start_date);
+        $builder->whereDate('created_at', '<=', $end_date);
         if ($branch_id)
         {
-            return Sale::settled()
-                       ->where('branch_id', $branch_id)
-                       ->whereDate('created_at', '>=', $start_date)
-                       ->whereDate('created_at', '<=', $end_date)
-                       ->sum('net_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Sale::settled()
-                   ->whereDate('created_at', '>=', $start_date)
-                   ->whereDate('created_at', '<=', $end_date)
-                   ->sum('net_amount');
+        return $builder->sum('net_amount');
     }
 
     public function getSalesInfo(Carbon $start_date, Carbon $end_date, $branch_id = null)
@@ -211,107 +161,85 @@ class SystemRepository implements ISystemRepository
 
 
         // active sales
-        $activeSales = $sales->whereNotIn('status', ['canceled']);
+        $activeSales = $sales->whereNotIn('status', [Sale::STATUS_CANCELED]);
         $salesInfo->totalSales = $activeSales->sum('net_amount');
         $salesInfo->salesCount = $activeSales->count();
 
         // canceled sales
-        $canceled = $sales->where('status', 'canceled');
+        $canceled = $sales->where('status', Sale::STATUS_CANCELED);
         $salesInfo->totalCanceled = $canceled->sum('net_amount');
         $salesInfo->canceledCount = $canceled->count();
 
         return $salesInfo;
     }
 
-    public function daysTotalSales(Carbon $date,$branch_id = null)
+    public function daysTotalSales(Carbon $date, $branch_id = null)
     {
+        $builder = Sale::uncanceled();
+        $builder->whereDate('created_at', $date);
         if ($branch_id)
         {
-            return Sale::uncanceled()
-                       ->where('branch_id', $branch_id)
-                       ->whereDate('created_at', $date)
-                       ->sum('net_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Sale::uncanceled()
-                   ->whereDate('created_at', $date)
-                   ->sum('net_amount');
+        return $builder->sum('net_amount');
     }
 
-    public function daysTotalExpenses(Carbon $date,$branch_id = null)
+    public function daysTotalExpenses(Carbon $date, $branch_id = null)
     {
-        //return 0;
+        $builder = Expense::approved();
+        $builder->whereDate('requested_at', $date);
         if ($branch_id)
         {
-            return Expense::approved()
-                          ->where('branch_id', $branch_id)
-                          ->whereDate('requested_at', $date)
-                          ->sum('approved_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Expense::approved()
-                      ->whereDate('requested_at', $date)
-                      ->sum('approved_amount');
+        return $builder->sum('approved_amount');
     }
 
     public function monthsTotalSales(Carbon $date, $branch_id = null)
     {
+        $builder = Sale::uncanceled();
+        $builder->whereYear('created_at', $date->year);
+        $builder->whereMonth('created_at', $date->month);
         if ($branch_id)
         {
-            return Sale::uncanceled()
-                       ->where('branch_id', $branch_id)
-                       ->whereYear('created_at', $date->year)
-                       ->whereMonth('created_at', $date->month)
-                       ->sum('net_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Sale::uncanceled()
-                   ->whereYear('created_at', $date->year)
-                   ->whereMonth('created_at', $date->month)
-                   ->sum('net_amount');
+        return $builder->sum('net_amount');
     }
 
     public function monthsTotalExpenses(Carbon $date, $branch_id = null)
     {
+        $builder = Expense::approved();
+        $builder->whereYear('requested_at', $date->year);
+        $builder->whereMonth('requested_at', $date->month);
         if ($branch_id)
         {
-            return Expense::approved()
-                          ->where('branch_id', $branch_id)
-                          ->whereYear('requested_at', $date->year)
-                          ->whereMonth('requested_at', $date->month)
-                          ->sum('approved_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Expense::approved()
-                      ->whereYear('requested_at', $date->year)
-                      ->whereMonth('requested_at', $date->month)
-                      ->sum('approved_amount');
+        return $builder->sum('approved_amount');
     }
 
-    public function daysTotalSettled(Carbon $date,$branch_id = null)
+    public function daysTotalSettled(Carbon $date, $branch_id = null)
     {
+        $builder = Sale::settled();
+        $builder->whereDate('created_at', $date);
         if ($branch_id)
         {
-            return Sale::settled()
-                       ->where('branch_id', $branch_id)
-                       ->whereDate('created_at', $date)
-                       ->sum('net_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Sale::settled()
-                   ->whereDate('created_at', $date)
-                   ->sum('net_amount');
+        return $builder->sum('net_amount');
     }
 
     public function monthsTotalSettled(Carbon $date, $branch_id = null)
     {
+        $builder = Sale::settled();
+        $builder->whereYear('created_at', $date->year);
+        $builder->whereMonth('created_at', $date->month);
         if ($branch_id)
         {
-            return Sale::settled()
-                       ->where('branch_id', $branch_id)
-                       ->whereYear('created_at', $date->year)
-                       ->whereMonth('created_at', $date->month)
-                       ->sum('net_amount');
+            $builder->where('branch_id', $branch_id);
         }
-        return Sale::settled()
-                   ->whereYear('created_at', $date->year)
-                   ->whereMonth('created_at', $date->month)
-                   ->sum('net_amount');
+        return $builder->sum('net_amount');
     }
 
 }

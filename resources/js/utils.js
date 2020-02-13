@@ -52,54 +52,20 @@ export function toNearestHundredsUpper(num) {
     return Math.ceil(num / 100) * 100;
 }
 
-export function fetchReceivable(url) {
-    return fetch(url).then((response) => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw Error(response.statusText);
-    }).catch((error) => {
-        return Promise.reject(error.message);
-    });
-}
-
-export function fetchItemStock(url) {
-    return fetch(url).then((response) => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw Error(response.statusText);
-    }).catch((error) => {
-        return Promise.reject(error.message);
-    });
-}
-
-export function fetchItems(url) {
-    return fetch(url).then((response) => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw Error(response.statusText);
-    }).catch((error) => {
-        return Promise.reject(error.message);
-    });
-}
-
-export function fetchItemByBarcode(url) {
-    return fetch(url).then((response) => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw Error(response.statusText);
-    }).catch((error) => {
-        return Promise.reject(error.message);
-    });
-}
-
+/**
+ *
+ * @param object
+ * @returns {any}
+ */
 export function deepClone(object) {
     return JSON.parse(JSON.stringify(object));
 }
 
+/**
+ *
+ * @param str {string}
+ * @returns {string}
+ */
 export function slugify(str) {
     str = String(str).trim();
     return str.split(' ').join('-').toLocaleLowerCase();

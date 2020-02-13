@@ -1,8 +1,7 @@
 <template>
     <input type="text"
-           class="form-control"
            :value="dateRange"
-           v-bind:class="{'is-invalid': !!hasErrors}"
+           v-bind:class="inputCssClass"
            ref="dateRangePicker"
            id="dateRangePicker">
 </template>
@@ -12,6 +11,7 @@
         props: {
             config: Object,
             value: '',
+            inputClass: '',
             hasErrors: Boolean,
         },
         mounted() {
@@ -24,6 +24,15 @@
             return {
                 dateRange: '',
             };
+        },
+        computed:{
+            inputCssClass(){
+                let cssClass = "form-control " + this.inputClass;
+                if(!!this.hasErrors){
+                    cssClass += " is-invalid";
+                }
+              return cssClass;
+            },
         },
         methods: {
             handleChange(startDate, endDate) {

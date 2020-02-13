@@ -97,7 +97,6 @@ class MigrationCartalystSentinel extends Migration
             $table->increments('id');
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('address')->nullable();
             $table->enum('gender',['male','female']);
             $table->date('dob')->nullable();
             $table->string('email')->nullable();
@@ -105,6 +104,7 @@ class MigrationCartalystSentinel extends Migration
             $table->string('phone')->nullable();
             $table->string('country')->nullable();
             $table->string('city')->nullable();
+            $table->string('address')->nullable();
             $table->string('avatar')->nullable();
             $table->unsignedInteger('branch_id')->nullable();
             $table->decimal('current_balance',15,2)->default(0.00);

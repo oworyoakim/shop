@@ -13,16 +13,48 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
+/**
+ * Class User
+ * @package App\Models
+ * @property int id
+ * @property string first_name
+ * @property string last_name
+ * @property string gender
+ * @property string username
+ * @property string email
+ * @property string phone
+ * @property string city
+ * @property string country
+ * @property string address
+ * @property string avatar
+ * @property bool active
+ * @property int branch_id
+ * @property double current_balance
+ * @property string password
+ * @property string permissions
+ * @property Carbon dob
+ * @property Carbon last_login
+ * @property Carbon password_last_changed
+ * @property Carbon created_at
+ * @property Carbon updated_at
+ * @property Carbon deleted_at
+ */
 class User extends EloquentUser
 {
     use SoftDeletes;
 
     protected $table = 'users';
-    protected $dates = ['password_last_changed'];
+    protected $dates = ['last_login','password_last_changed'];
 
     protected $guarded = [];
 
     protected $loginNames = ['email','username'];
+
+    const GENDER_MALE = 'male';
+    const GENDER_FEMALE = 'female';
+
+    const STATUS_ACTIVE = true;
+    const STATUS_INACTIVE = false;
 
     public static function byEmail($email)
     {
@@ -227,7 +259,7 @@ class User extends EloquentUser
     public function daysReturnsInwards($date)
     {
         return $this->daysSales($date)
-                    ->whereIn('payment_status', ['partially_returned', 'fully_returned']);
+                    ->whereIn('payment_status', [Sale::STATUS_PARTIALLY_RETURNED, Sale::STATUS_FULLY_RETURNED]);
     }
 
     public function daysTotalReturnsInwards($date)
@@ -242,7 +274,7 @@ class User extends EloquentUser
     public function monthsReturnsInwards($date)
     {
         return $this->monthsSales($date)
-                    ->whereIn('payment_status', ['partially_returned', 'fully_returned']);
+                    ->whereIn('payment_status', [Sale::STATUS_PARTIALLY_RETURNED, Sale::STATUS_FULLY_RETURNED]);
     }
 
     public function monthsTotalReturnsInwards($date)
@@ -257,7 +289,7 @@ class User extends EloquentUser
     public function overallReturnsInwards()
     {
         return $this->uncanceledSales()
-                    ->whereIn('payment_status', ['partially_returned', 'fully_returned']);
+                    ->whereIn('payment_status', [Sale::STATUS_PARTIALLY_RETURNED, Sale::STATUS_FULLY_RETURNED]);
     }
 
     public function overallTotalReturnsInwards()

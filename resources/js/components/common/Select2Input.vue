@@ -5,8 +5,8 @@
             v-bind:class="{'is-invalid': !!hasErrors}"
             :value="value"
             :required="required"
+            :autofocus="autofocus"
             :multiple="multiple">
-        <option value="">{{placeholder || 'Select...'}}</option>
         <option v-for="option in selectOptions" :value="option.value">{{option.text}}</option>
     </select>
 </template>
@@ -17,12 +17,13 @@
             config: Object,
             selectOptions: {
                 type: Array,
-                default: [],
+                default: () => [],
                 required: true,
             },
             value: '',
             placeholder: '',
             required: Boolean,
+            autofocus: Boolean,
             multiple: {
                 type: Boolean,
                 required: false,
@@ -32,7 +33,7 @@
         },
         mounted() {
             setTimeout(() => {
-                $(this.$refs.select2Dropdown).select2(this.config).on('change', this.handleChange);
+                $(this.$refs.select2Dropdown).select2({...this.config,placeholder: this.placeholder,theme: "classic"}).on('change', this.handleChange);
                 $(this.$refs.select2Dropdown).val(this.value).trigger('change');
             }, 1500);
         },

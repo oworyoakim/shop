@@ -24,7 +24,7 @@ class CreateStocksTable extends Migration
             $table->decimal('discount',5,2)->default(0.00);
             $table->unsignedInteger('user_id')->nullable();
             $table->unsignedInteger('purchase_id')->nullable();
-            $table->enum('status',['active,expired'])->default('active');
+            $table->enum('status',['active','expired','finished'])->default('active');
             $table->timestamps();
             $table->softDeletes();
         });

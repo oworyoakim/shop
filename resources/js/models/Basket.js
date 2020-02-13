@@ -1,5 +1,6 @@
 import moment from "moment";
 import {toNearestHundredsUpper} from "../utils";
+import Item from "./Item";
 
 export default class Basket {
     constructor() {
@@ -11,15 +12,12 @@ export default class Basket {
         this.taxRate = 0;
         this.tenderedAmount = 0;
         this.branchId = null;
-        this.invoiceNumber = moment().millisecond();
-        this.paymentDate = moment().format("YYYY-MM-DD HH:mm:ss");
-    }
-
-    /**
-     * @returns {boolean}
-     */
-    get isEmpty() {
-        return Object.keys(this.items).length === 0;
+        this.supplierId = null;
+        this.customerId = null;
+        this.invoiceNumber = moment.now();
+        this.paymentDate = moment().format("YYYY-MM-DD");
+        this.paidAmount = 0;
+        this.dueDate = '';
     }
 
     /**
@@ -30,6 +28,12 @@ export default class Basket {
         return Object.keys(this.items).length;
     }
 
+    /**
+     * @returns {boolean}
+     */
+    get isEmpty() {
+        return this.count === 0;
+    }
 
     /**
      *
@@ -39,22 +43,63 @@ export default class Basket {
         return this.tenderedAmount - this.netAmount;
     }
 
+    /**
+     *
+     * @returns {number}
+     */
+    get dueAmount() {
+        return this.netAmount - this.paidAmount;
+    }
+
     itemExists(barcode) {
         return this.items.hasOwnProperty(barcode);
     }
 
     /**
-     *
-     * @param item {Item}
+     * @param barcode {String}
+     * @param data {Object}
      */
-    addItem(item) {
-        let barcode = item.barcode;
-        if (this.itemExists(barcode)) {
-            this.items[barcode].increment();
-        } else {
-            this.items[barcode] = item;
+    addItem(barcode, data) {
+        let item = new Item();
+        item.id = data.id;
+        item.type = data.type || '';
+        item.barcode = data.barcode;
+        item.secondaryBarcode = data.secondaryBarcode;
+        item.title = data.title;
+        item.categoryId = data.categoryId;
+        item.category = data.category;
+        item.unitId = data.unitId;
+        item.unit = data.unit;
+        let price = 0;
+        if (item.type === 'buy') {
+            price = data.costPrice;
+        } else if (item.type === 'sell') {
+            price = data.sellPrice;
         }
-        this.computeAmount();
+        item.price = price || 0;
+        item.stockQty = data.stockQty || 0;
+        item.discount = data.discount || 0;
+        item.secondaryDiscount = data.secondaryDiscount || 0;
+        item.margin = data.margin || 0;
+        item.quantity = data.quantity || 0;
+        item.avatar = data.avatar || null;
+        if (item.type === 'sell' && barcode === item.secondaryBarcode) {
+            if (this.itemExists(item.secondaryBarcode)) {
+                this.updateItemQuantity(item.secondaryBarcode, 1);
+            } else {
+                item.isSecondary = true;
+                item.discount = item.secondaryDiscount;
+                this.items[item.secondaryBarcode] = item;
+            }
+            this.computeAmount();
+        } else if (barcode === item.barcode) {
+            if (this.itemExists(item.barcode)) {
+                this.updateItemQuantity(item.barcode, 1);
+            } else {
+                this.items[item.barcode] = item;
+            }
+            this.computeAmount();
+        }
     }
 
     removeItem(barcode) {
@@ -65,21 +110,35 @@ export default class Basket {
     }
 
     clear() {
-        this.invoiceNumber = moment().millisecond();
+        this.invoiceNumber = moment.now();
         this.items = {};
         this.grossAmount = 0;
         this.netAmount = 0;
         this.taxAmount = 0;
         this.discount = 0;
         this.taxRate = 0;
+        this.paidAmount = 0;
+        this.supplierId = '';
+        this.customerId = '';
+        this.dueDate = '';
     }
 
     setTaxRate(rate) {
         this.taxRate = rate;
     }
 
-    setTenderedAmount(amount){
+    setTenderedAmount(amount) {
         this.tenderedAmount = amount;
+    }
+
+    setPaidAmount(amount) {
+        if (amount > this.netAmount) {
+            return;
+        }
+        if (amount === this.netAmount) {
+            this.dueDate = '';
+        }
+        this.paidAmount = amount;
     }
 
     computeAmount() {
@@ -98,30 +157,60 @@ export default class Basket {
         }
         this.taxAmount = toNearestHundredsUpper(Math.round(this.netAmount * this.taxRate / 100));
         this.netAmount += this.taxAmount;
+        this.paidAmount = this.netAmount;
     }
 
-    incrementItemQuantity(prodCode) {
-        this.items[prodCode].increment();
-        this.computeAmount();
+    setItemQuantity(barcode, qty) {
+        let item = this.items[barcode];
+        if (item instanceof Item) {
+            if (item.type === 'buy') {
+                item.quantity = qty;
+            } else if (item.type === 'adjust') {
+                item.stockQty = qty;
+            } else if (item.type === 'sell' && item.stockQty >= qty) {
+                item.quantity = qty;
+            }
+            this.computeAmount();
+        }
     }
 
-    decrementItemQuantity(prodCode) {
-        this.items[prodCode].decrement();
-        this.computeAmount();
+    updateItemQuantity(barcode, qty) {
+        let item = this.items[barcode];
+        if (item instanceof Item) {
+            if (item.type === 'buy') {
+                item.quantity += qty;
+            } else if (item.type === 'adjust') {
+                item.stockQty += qty;
+            } else {
+                let quantity = item.quantity + qty;
+                if (item.stockQty >= quantity) {
+                    item.quantity = quantity;
+                }
+            }
+            this.computeAmount();
+        }
     }
 
-    updateItemQuantity(prodCode, qty) {
-        this.items[prodCode].setQuantity(qty);
-        this.computeAmount();
+    setItemPrice(barcode, price) {
+        let item = this.items[barcode];
+        if (item instanceof Item && price >= 0) {
+            item.price = price;
+            this.computeAmount();
+        }
     }
 
-    updateItemPrice(prodCode, price) {
-        this.items[prodCode].setPrice(price);
-        this.computeAmount();
+    setItemDiscount(barcode, rate) {
+        let item = this.items[barcode];
+        if (item instanceof Item && rate >= 0) {
+            item.discount = rate;
+            this.computeAmount();
+        }
     }
 
-    updateItemDiscount(prodCode, rate) {
-        this.items[prodCode].setDiscount(rate);
-        this.computeAmount();
+    setItemStock(barcode, qty) {
+        let item = this.items[barcode];
+        if (item instanceof Item && qty >= 0) {
+            item.stockQty = qty;
+        }
     }
 }

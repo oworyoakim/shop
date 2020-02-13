@@ -4,7 +4,7 @@
         <div class="box-header with-border">
             <h3 class="box-title"><i class="fa fa-balance-scale"></i> &nbsp;Items</h3>
             <div class="box-tools pull-right">
-                <button :disabled="isLoading" @click="createItem" class="btn btn-info btn-sm pull-right"><i
+                <button :disabled="isLoading" @click="editItem" class="btn btn-info btn-sm pull-right"><i
                     class="fa fa-plus"></i> Add Item
                 </button>
             </div>
@@ -36,7 +36,7 @@
                         <button v-if="item.canBeEdited"
                                 type="button"
                                 title="Edit"
-                                @click="createItem(item)"
+                                @click="editItem(item)"
                                 class="btn btn-info btn-sm">
                             <i class="fa fa-edit"></i>
                         </button>
@@ -58,82 +58,7 @@
                 </tr>
                 </tbody>
             </table>
-            <div class="modal center-modal fade" ref="itemFormModal" id="itemFormModal" tabindex="-1"
-                 data-backdrop="static" data-keyboard="false" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <form @submit.prevent="saveItem" class="form-horizontal">
-                            <div class="modal-header bg-pale-purple">
-                                <h5 class="modal-title">
-                                    <span v-if="!!activeItem.id">Edit Item</span>
-                                    <span v-else>New Item</span>
-                                </h5>
-                                <button @click="closeModal" type="button" class="close" data-dismiss="modal">
-                                    <span aria-hidden="true">×</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="form-group row">
-                                    <label class="col-4">Title</label>
-                                    <div class="col-8">
-                                        <input v-model="activeItem.title" type="text" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label class="col-4">Unit of Measurement</label>
-                                    <div class="col-8">
-                                        <select v-model="activeItem.unitId" class="form-control">
-                                            <option>Select unit of measurement...</option>
-                                            <option v-for="unit in units" :value="unit.value">{{unit.text}}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label class="col-4">Category</label>
-                                    <div class="col-8">
-                                        <select v-model="activeItem.categoryId" class="form-control">
-                                            <option value="''">Select category...</option>
-                                            <option v-for="category in categories" :value="category.value">{{category.text}}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label class="col-4">Item Type</label>
-                                    <div class="col-8">
-                                        <select v-model="activeItem.account" class="form-control" required>
-                                            <option value="sales">Sales Only</option>
-                                            <option value="purchases">Purchases Only</option>
-                                            <option value="both">Both</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-group row">
-                                    <label class="col-4">Profit Margin</label>
-                                    <div class="col-8">
-                                        <input v-model="activeItem.margin" type="number" class="form-control" min="0"
-                                               step="0.1">
-                                    </div>
-                                </div>
-
-                                <div class="form-group row">
-                                    <label class="col-4">Description</label>
-                                    <div class="col-8">
-                                            <textarea v-model="activeItem.description" class="form-control"
-                                                      rows="3"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer modal-footer-uniform">
-                                <button :disabled="isSending || !(!!activeItem.title && !!activeItem.unitId && !!activeItem.categoryId && !!activeItem.account)"
-                                        type="submit"
-                                        class="btn btn-info float-right">
-                                    Save
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+            <app-item-form></app-item-form>
         </div>
         <!-- /.box-body -->
         <iframe src="about:blank" id="printFrame" name="printFrame" style="width:0px; height:0px; border:0px;"></iframe>
@@ -157,32 +82,14 @@
         computed: {
             ...mapGetters({
                 items: 'GET_ITEMS',
-                formSelectionOptions: 'GET_FORM_SELECTION_OPTIONS',
             }),
-            categories() {
-                return this.formSelectionOptions.categories.map((cat) => {
-                    return {
-                        text: cat.title,
-                        value: cat.id,
-                    }
-                });
-            },
-            units() {
-                return this.formSelectionOptions.units.map((unit) => {
-                    return {
-                        text: unit.title,
-                        value: unit.id,
-                    }
-                });
-            }
         },
         data() {
             return {
                 isLoading: false,
-                isSending: false,
-                activeItem: new Product(),
                 barcode: '',
                 barcodeCount: 1,
+                activeItem: null,
             }
         },
         methods: {
@@ -197,21 +104,6 @@
                 } catch (error) {
                     this.isLoading = false;
                     swal({title: error, icon: 'error'});
-                }
-            },
-            async saveItem() {
-                try {
-                    this.isSending = true;
-                    let response = await this.$store.dispatch('SAVE_ITEM', this.activeItem);
-                    this.isSending = false;
-                    swal({title: response, icon: 'success'});
-                    this.closeModal();
-                    EventBus.$emit('SAVE_ITEM');
-                } catch (error) {
-                    this.isSending = false;
-                    let content = document.createElement('div');
-                    content.innerHTML = error;
-                    swal({content: content, icon: 'error'});
                 }
             },
             async deleteItem(item) {
@@ -236,11 +128,11 @@
                     swal({title: error, icon: 'error'});
                 }
             },
-            createItem(item = null) {
+            editItem(item = null) {
                 if (item) {
                     this.activeItem = deepClone(item);
                 }
-                $(this.$refs.itemFormModal).modal('show');
+                EventBus.$emit('EDIT_ITEM',this.activeItem);
             },
             async printItemBarcode(barcode){
                 try{

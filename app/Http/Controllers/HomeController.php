@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Repositories\ISystemRepository;
 use Cartalyst\Sentinel\Laravel\Facades\Sentinel;
 use Exception;
 use Illuminate\Http\Request;
@@ -16,6 +17,16 @@ use stdClass;
 
 class HomeController extends Controller
 {
+    /**
+     * @var ISystemRepository
+     */
+    private $repository;
+
+    public function __construct(ISystemRepository $repository)
+    {
+        $this->repository = $repository;
+    }
+
     public function index()
     {
         if (!Sentinel::check())
@@ -77,4 +88,50 @@ class HomeController extends Controller
             return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
         }
     }
+
+    public function getItemByBarcode(Request $request)
+    {
+        try
+        {
+            $barcode = $request->get('barcode');
+            if(!$barcode){
+                throw new Exception("Barcode required!");
+            }
+            $item = $this->repository->getItemByBarcode($barcode);
+            return response()->json($item);
+        } catch (Exception $ex)
+        {
+            Log::error("GET_ITEM_BY_BARCODE: {$ex->getMessage()}");
+            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+        }
+    }
+
+    public function getSalableProducts(Request $request)
+    {
+        try
+        {
+            $branch_id = $request->get('branch_id');
+            $items = $this->repository->getSalableItems($branch_id);
+            return response()->json($items);
+        } catch (Exception $ex)
+        {
+            Log::error("GET_SALABLE_PRODUCTS: {$ex->getMessage()}");
+            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+        }
+    }
+
+    public function getPurchasableProducts(Request $request)
+    {
+        try
+        {
+            $branch_id = $request->get('branch_id');
+            $items = $this->repository->getPurchasableItems($branch_id);
+            return response()->json($items);
+        } catch (Exception $ex)
+        {
+            Log::error("GET_PURCHASABLE_PRODUCTS: {$ex->getMessage()}");
+            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+        }
+    }
+
 }

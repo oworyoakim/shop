@@ -14,7 +14,7 @@
                 <thead>
                 <tr class="bg-pale-purple text-bold">
                     <th>Title</th>
-                    <th>Slug</th>
+                    <th>Short Name</th>
                     <th>Description</th>
                     <th>Action</th>
                 </tr>
@@ -76,7 +76,8 @@
                                 <button :disabled="isSending || !!!activeUnit.title"
                                         type="submit"
                                         class="btn btn-info float-right">
-                                    Save
+                                    <span v-if="isSending" class="fa fa-spinner fa-spin"></span>
+                                    <span v-else>Save</span>
                                 </button>
                             </div>
                         </form>
