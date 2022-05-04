@@ -1,4 +1,16 @@
 const mix = require('laravel-mix');
+const path = require('path');
+
+mix.webpackConfig(webpack => {
+    return {
+        resolve: {
+            extensions: ["*", ".js", ".vue"],
+            alias: {
+                '@': path.resolve(__dirname, 'resources/js/')
+            }
+        },
+    }
+})
 
 /*
  |--------------------------------------------------------------------------
@@ -11,8 +23,25 @@ const mix = require('laravel-mix');
  |
  */
 
+
+// Landlord App
+
+
+// Tenant Admin App
+
+
+// Tenant Shop App
 mix.js('resources/js/app.js', 'public/js')
-    .sass('resources/sass/app.scss', 'public/css')
-    .options({
-        processCssUrls: false
-    });
+    .vue({version: 2})
+    .sass('resources/sass/app.scss', 'public/css');
+
+
+
+// Auth App
+
+
+
+
+if (mix.inProduction()) {
+    mix.version();
+}

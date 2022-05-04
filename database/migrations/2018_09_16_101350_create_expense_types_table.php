@@ -15,6 +15,7 @@ class CreateExpenseTypesTable extends Migration
     {
         Schema::create('expense_types', function (Blueprint $table) {
             $table->increments('id');
+            $table->unsignedBigInteger('tenant_id');
             $table->string('title');
             $table->text('description')->nullable();
             $table->enum('recurrence',['none','daily','monthly','yearly'])->default('none');

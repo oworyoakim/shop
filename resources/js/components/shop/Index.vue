@@ -2,21 +2,19 @@
     <div class="box">
         <div class="box-body">
             <div class="row">
-                <div class="col-12">
-                    <input v-model="barcode"
-                           type="text"
-                           class="form-control border-primary barcode-input"
-                           ref="barcodeInput"
-                           placeholder="Item Barcode"
-                           autocomplete="off"
-                           @change="addItem"
-                           autofocus>
-                </div>
-            </div>
-            <div class="row mt-5">
                 <div class="col-sm-8 table-responsive">
+                    <div class="form-group">
+                        <app-autocomplete-input
+                            :select-items.sync="productsOptions"
+                            v-model="barcode"
+                            :value="barcode"
+                            @input="addItem"
+                            :autofocus="true"
+                            placeholder="Type item barcode, title, or category to search"
+                        />
+                    </div>
                     <table class="table-bordered table-sm text-center" width="100%">
-                        <thead class="bg-dark">
+                        <thead class="bg-dark text-white">
                         <tr>
                             <th class="w-sm-p50">Item</th>
                             <th class="w-sm-p10">Qty</th>
@@ -33,44 +31,32 @@
                             </tr>
                         </template>
                         <template v-else>
-                            <tr v-for="(item,key) in basket.items">
+                            <tr v-for="(item,key) in basket.items" :key="key">
                                 <td class="text-left">
                                     <span>{{item.title}}</span>
                                     <br/>
                                     <span class="small text-muted">{{key}}</span>
                                 </td>
                                 <td>
-                                    <div class="input-group">
-                                        <span class="input-group-prepend" @click="decrementItem(item)">
-                                            <span class="input-group-text">
-                                                <i class="fa fa-minus"></i>
-                                            </span>
-                                        </span>
-                                        <input type="text"
-                                               :value="item.quantity"
-                                               class="form-control text-center"
-                                               min="0"
-                                               :title="`In ${item.unit}`"
-                                               @change="updateQuantity(item,$event.target.value)">
-                                        <div class="input-group-append" @click="incrementItem(item)">
-                                            <span class="input-group-text">
-                                                <i class="fa fa-plus"></i>
-                                            </span>
-                                        </div>
-                                    </div>
+                                    <input type="number"
+                                           :value="item.quantity"
+                                           class="form-control text-center"
+                                           min="0"
+                                           :title="`In ${item.unit}`"
+                                           @change.prevent="setItemQuantity(item,$event.target.value)">
                                 </td>
                                 <td>
                                     <input type="text"
                                            :value="$numeral(item.price).format('0,0')"
                                            class="form-control text-center"
-                                           @change="updatePrice(item,$event.target.value)"
+                                           @change.prevent="setItemPrice(item,$event.target.value)"
                                            disabled>
                                 </td>
                                 <td>
                                     <input type="text"
                                            :value="$numeral(item.discount).format('0,0')"
                                            class="form-control text-center"
-                                           @change="updateItemDiscount(item,$event.target.value)"
+                                           @change.prevent="setItemDiscount(item,$event.target.value)"
                                            disabled>
                                 </td>
                                 <td>
@@ -157,7 +143,7 @@
                         <div class="col-4">
                             <button type="button" @click="completeTransaction"
                                     class="btn btn-success btn-sm btn-block"
-                                    :disabled="basket.count === 0">
+                                    :disabled="basket.count === 0  || basket.balance < 0">
                                 <i class="fa fa-money"></i>
                                 Finish
                             </button>
@@ -165,7 +151,7 @@
                         <div class="col-4">
                             <button type="button" @click="printReceipt"
                                     class="btn btn-warning btn-sm btn-block"
-                                    :disabled="basket.count === 0">
+                                    :disabled="basket.count === 0 || basket.balance < 0">
                                 <i class="fa fa-print"></i> Print
                             </button>
                         </div>
@@ -204,11 +190,21 @@
             ...mapGetters({
                 products: 'GET_SALABLE_PRODUCTS',
                 shopInfo: 'GET_SHOP_INFO',
-            })
+                formSelectionsOptions: 'GET_FORM_SELECTION_OPTIONS',
+                basket: 'GET_BASKET',
+            }),
+            productsOptions() {
+                return this.products.map((item) => {
+                    let barcode = (!!item.isSecondary && !!item.secondaryBarcode) ? item.secondaryBarcode : item.barcode;
+                    return {
+                        value: barcode,
+                        text: barcode + ' (' + item.title + ' ' + item.category + ')',
+                    }
+                });
+            },
         },
         data() {
             return {
-                basket: new Basket(),
                 barcode: '',
                 isSending: false,
             }
@@ -226,16 +222,11 @@
             },
             async addItem(event) {
                 try {
-                    console.log(event);
-                    event.stopImmediatePropagation();
-                    this.barcode = this.barcode.trim();
-                    if (this.barcode === '') {
-                        if (this.basket.count > 0 && event.type === 'keyup' && event.key === 'Enter') {
-                            $(this.$refs.amountTendered).focus();
-                            return;
-                        }
-                        $(this.$refs.barcodeInput).focus();
-                        return;
+                    //console.log(event);
+                    //event.stopImmediatePropagation();
+                    this.barcode = String(this.barcode).trim();
+                    if (!!!this.barcode) {
+                        throw "Search field is empty!";
                     }
 
                     let product = this.products.find((prod) => {
@@ -243,40 +234,40 @@
                     });
 
                     if (!product) {
-                        await swal({title: 'Item not found!', icon: 'error'});
+                        throw "Item not found!";
+                    }
+                    if (product.stockQty <= 0) {
+                        throw "Item out off stock!";
+                    }
+                    // if the item is already in the basket, just increment quantity by 1
+                    if(this.basket.itemExists(this.barcode)){
+                        this.updateItemQuantity(product,1);
                         this.barcode = '';
-                        $(this.$refs.barcodeInput).focus();
+                        $("#autocompleteInput").focus();
                         return;
                     }
                     product = deepClone(product);
-                    if (product.stockQty <= 0) {
-                        await swal({title: 'Item out off stock!', icon: 'error'});
-                        this.barcode = '';
-                        $(this.$refs.barcodeInput).focus();
-                        return;
-                    }
-
                     product.type = 'sell';
-                    //console.log('Product Clone: ',product);
-                    let item = Item.make(product);
-                    item.setQuantity(1);
-                    this.basket.addItem(this.barcode, item);
-                    console.log('Basket: ', this.basket);
+                    product.quantity = 1;
+                    this.$store.dispatch('ADD_ITEM', {barcode: this.barcode, item: product});
                     this.barcode = '';
-                    $(this.$refs.barcodeInput).focus();
+                    $("#autocompleteInput").focus();
                 } catch (error) {
                     console.error(error.message);
                     await swal({title: error.message, icon: 'error'});
                     this.barcode = '';
-                    $(this.$refs.barcodeInput).focus();
+                    $("#autocompleteInput").focus();
                 }
             },
-            updateQuantity(item, qty) {
-                if (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) {
-                    this.basket.updateItemQuantity(item.secondaryBarcode, qty);
-                } else {
-                    this.basket.updateItemQuantity(item.barcode, qty);
-                }
+            setItemQuantity(item, qty) {
+                qty = this.$numeral(qty).value();
+                let barcode = (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) ? item.secondaryBarcode : item.barcode;
+                this.$store.dispatch('SET_ITEM_QUANTITY', {barcode: barcode, quantity: qty});
+            },
+            updateItemQuantity(item, qty) {
+                qty = this.$numeral(qty).value();
+                let barcode = (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) ? item.secondaryBarcode : item.barcode;
+                this.$store.dispatch('UPDATE_ITEM_QUANTITY', {barcode: barcode, quantity: qty});
             },
 
             updateItemDiscount(item, rate) {
@@ -287,41 +278,30 @@
                 }
             },
 
-            updatePrice(item, price) {
+            setItemDiscount(item, rate) {
+                rate = this.$numeral(rate).value();
+                let barcode = (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) ? item.secondaryBarcode : item.barcode;
+                this.$store.dispatch('SET_ITEM_DISCOUNT', {barcode: barcode, rate: rate});
+            },
+
+            setItemPrice(item, price) {
                 price = this.$numeral(price).value();
-                if (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) {
-                    this.basket.updateItemPrice(item.secondaryBarcode, price);
-                } else {
-                    this.basket.updateItemPrice(item.barcode, price);
-                }
-            },
-
-            incrementItem(item) {
-                if (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) {
-                    this.basket.incrementItemQuantity(item.secondaryBarcode);
-                } else {
-                    this.basket.incrementItemQuantity(item.barcode);
-                }
-            },
-
-            decrementItem(item) {
-                if (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) {
-                    this.basket.decrementItemQuantity(item.secondaryBarcode);
-                } else {
-                    this.basket.decrementItemQuantity(item.barcode);
-                }
+                let barcode = (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) ? item.secondaryBarcode : item.barcode;
+                this.$store.dispatch('SET_ITEM_PRICE', {barcode: barcode, price: price});
             },
 
             removeItem(item) {
-                if (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) {
-                    this.basket.removeItem(item.secondaryBarcode);
-                } else {
-                    this.basket.removeItem(item.barcode);
-                }
+                let barcode = (item.isSecondary && this.basket.itemExists(item.secondaryBarcode)) ? item.secondaryBarcode : item.barcode;
+                this.$store.dispatch('REMOVE_ITEM', {barcode: barcode});
             },
 
             setAmountTendered(amount) {
-                this.basket.setTenderedAmount(this.$numeral(amount).value());
+                amount = this.$numeral(amount).value();
+                this.$store.dispatch('SET_TENDERED_AMOUNT', {amount: amount});
+            },
+            setAmountPaid(amount) {
+                amount = this.$numeral(amount).value();
+                this.$store.dispatch('SET_PAID_AMOUNT', {amount: amount});
             },
             async clearBasket() {
                 let isConfimed = await swal({
@@ -334,7 +314,7 @@
                 if (!isConfimed) {
                     return;
                 }
-                this.basket.clear();
+                this.$store.dispatch('CLEAR_BASKET');
             },
 
             async completeTransaction(event) {

@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
-use Cartalyst\Sentinel\Laravel\Facades\Sentinel;
 use Closure;
 use Illuminate\Http\Response;
 

@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="keywords"
-          content="Point of Sale System, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
+          content="Point of Sale Landlord, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
     <meta name="description" content="Cutting Edge solution for perfect PoS Businesses and Outlets."/>
     <meta name="author" content="Owor Yoakim">
     <link rel="icon" href="favicon.ico">

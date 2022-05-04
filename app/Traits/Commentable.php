@@ -9,7 +9,7 @@
 namespace App\Traits;
 
 
-use App\Models\Comment;
+use App\Models\Tenant\Comment;
 
 trait Commentable
 {

@@ -4,6 +4,7 @@
                class="form-control"
                :value="searchText"
                :required="required"
+               id="autocompleteInput"
                :autofocus="autofocus"
                @keyup.prevent="filterItems($event.target.value)"
                @change.prevent="findItemByBarcode($event.target.value)"

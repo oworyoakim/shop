@@ -36,6 +36,7 @@ return [
 
         'database' => [
             'driver' => 'database',
+            //'connection' => 'sqlite', // touch database/database.sqlite && sudo apt-get install php7.3-sqlite3 && sudo service apache2 restart && chown root:www-data database/database.sqlite && php artisan migrate --database=sqlite --path=PATH_TO_jobs_AND_failed_jobs_TABLES
             'table' => 'jobs',
             'queue' => 'default',
             'retry_after' => 90,
@@ -46,16 +47,15 @@ return [
             'host' => 'localhost',
             'queue' => 'default',
             'retry_after' => 90,
-            'block_for' => 0,
         ],
 
         'sqs' => [
             'driver' => 'sqs',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'key' => env('SQS_KEY', 'your-public-key'),
+            'secret' => env('SQS_SECRET', 'your-secret-key'),
             'prefix' => env('SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
             'queue' => env('SQS_QUEUE', 'your-queue-name'),
-            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'region' => env('SQS_REGION', 'us-east-1'),
         ],
 
         'redis' => [
@@ -80,9 +80,10 @@ return [
     */
 
     'failed' => [
-        'driver' => env('QUEUE_FAILED_DRIVER', 'database'),
         'database' => env('DB_CONNECTION', 'mysql'),
+        //'database' => 'sqlite',
         'table' => 'failed_jobs',
+        'driver' => 'database-uuids',
     ],
 
 ];

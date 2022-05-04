@@ -18,6 +18,7 @@ class EnforcePasswordChange
      */
     public function handle($request, Closure $next)
     {
+        /*
         $loggedInUser = Sentinel::getUser();
         //dd($loggedInUser);
         $passwordDuration = intval(settings()->get('user_password_days'));
@@ -28,6 +29,7 @@ class EnforcePasswordChange
         if (is_null($loggedInUser->password_last_changed) || $loggedInUser->password_last_changed->lessThan(Carbon::now()->subDays($passwordDuration))) {
             return redirect()->route('force-password-change')->with('error', 'You must change your password to continue!');
         }
+        */
         return $next($request);
     }
 }

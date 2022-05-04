@@ -28,15 +28,5 @@ if (token) {
 }
 
 window.axios = Vue.prototype.$http = axios;
-
-window.toastr = require('toastr');
-window.swal = window.sweetAlert = require('sweetalert');
-require('select2');
-require("../../public/admin/js/jquery.slimscroll.min.js");
-require("../../public/admin/js/datatables.min.js");
-require("../../public/admin/js/template.js");
-// bootstrap-daterangepicker
-require('../../public/admin/bootstrap-daterangepicker/daterangepicker');
-// bootstrap-datepicker
-require('../../public/admin/bootstrap-datepicker/js/bootstrap-datepicker.min');
+window.swal = window.sweetAlert = require('sweetalert2');
 

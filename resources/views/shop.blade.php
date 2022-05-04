@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{csrf_token()}}">
     <meta name="base-url" content="{{ url('/') }}">
     <meta name="keywords"
-          content="Point of Sale System, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
+          content="Point of Sale Landlord, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
     <meta name="description" content="Cutting Edge solution for perfect PoS Businesses and Outlets."/>
     <meta name="author" content="Owor Yoakim"/>
 <!-- App Styles -->
@@ -26,9 +26,9 @@
 <div class="wrapper" id="main-app">
     <header class="main-header">
         <app-shop-navbar
-            avatar="{{Sentinel::getUser()->avatar}}"
-            username="{{Sentinel::getUser()->username}}"
-            email="{{Sentinel::getUser()->email}}"
+            avatar="{{$user->avatar}}"
+            username="{{$user->username}}"
+            email="{{$user->email}}"
         />
     </header>
 

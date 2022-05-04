@@ -18,6 +18,15 @@ return [
         'passwords' => 'users',
     ],
 
+
+    /**
+     * These are the default Admin Credentials For All Tenants
+     */
+    'admin' => [
+        'email' => env('ADMIN_EMAIL', 'admin@hotbet.test'),
+        'username' => env('ADMIN_USERNAME', 'admin'),
+        'password' => env('ADMIN_PASSWORD', 'admin'),
+    ],
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards
@@ -40,11 +49,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'tenant' => [
+            'driver' => 'session',
+            'provider' => 'tenant',
+        ],
 
         'api' => [
             'driver' => 'token',
             'provider' => 'users',
-            'hash' => false,
         ],
     ],
 
@@ -68,9 +80,13 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\User::class,
+            'model' => App\Models\Landlord\Admin::class,
         ],
 
+        'tenant' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Tenant\User::class,
+        ],
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
@@ -95,23 +111,14 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
+            'table' => 'admin_password_resets',
+            'expire' => 60,
+        ],
+        'tenant' => [
+            'provider' => 'tenant',
             'table' => 'password_resets',
             'expire' => 60,
-            'throttle' => 60,
         ],
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Password Confirmation Timeout
-    |--------------------------------------------------------------------------
-    |
-    | Here you may define the amount of seconds before a password confirmation
-    | times out and the user is prompted to re-enter their password via the
-    | confirmation screen. By default, the timeout lasts for three hours.
-    |
-    */
-
-    'password_timeout' => 10800,
 
 ];

@@ -8,11 +8,11 @@
     <meta name="csrf-token" content="{{csrf_token()}}">
     <meta name="base-url" content="{{ url('/') }}">
     <meta name="keywords"
-          content="Point of Sale System, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
+          content="Point of Sale Landlord, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
     <meta name="description" content="Cutting Edge solution for perfect PoS Businesses and Outlets."/>
     <meta name="author" content="Owor Yoakim"/>
 <!-- App Styles -->
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="{{mix('/css/app.css')}}">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -44,21 +44,6 @@
     </footer>
 </div>
 <!-- ./wrapper -->
-<!-- <script src="/js/app.js"></script> -->
-<script src="{{ in_array(env('APP_ENV'),['development','local','test','staging']) ? mix('js/app.js') : asset('js/app.js') }}"></script>
-<script>
-    @if(session('success'))
-    toastr.success('{{session('success')}}');
-    @endif
-    @if(session('info'))
-    toastr.info('{{session('info')}}');
-    @endif
-    @if(session('warning'))
-    toastr.warning('{{session('warning')}}');
-    @endif
-    @if(session('error'))
-    toastr.error('{{session('error')}}');
-    @endif
-</script>
+<script src="{{ mix('js/app.js') }}"></script>
 </body>
 </html>

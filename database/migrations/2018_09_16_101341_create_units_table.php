@@ -15,6 +15,7 @@ class CreateUnitsTable extends Migration
     {
         Schema::create('units', function (Blueprint $table) {
             $table->increments('id');
+            $table->unsignedBigInteger('tenant_id');
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('description')->nullable();

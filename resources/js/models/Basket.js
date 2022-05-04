@@ -167,8 +167,19 @@ export default class Basket {
                 item.quantity = qty;
             } else if (item.type === 'adjust') {
                 item.stockQty = qty;
-            } else if (item.type === 'sell' && item.stockQty >= qty) {
-                item.quantity = qty;
+            } else if (item.type === 'sell') {
+                if (item.stockQty >= qty) {
+                    item.quantity = qty;
+                } else {
+                    swal({
+                        title: "Item out of stock!",
+                        text: `Only ${item.stockQty} ${item.unit} left.`,
+                        icon: 'error'
+                    }).then(() => {
+                        this.barcode = '';
+                        $("#autocompleteInput").focus();
+                    });
+                }
             }
             this.computeAmount();
         }
@@ -185,6 +196,16 @@ export default class Basket {
                 let quantity = item.quantity + qty;
                 if (item.stockQty >= quantity) {
                     item.quantity = quantity;
+                } else {
+                    let availableQty = item.stockQty - item.quantity;
+                    swal({
+                        title: "Item out of stock!",
+                        text: `Only ${item.stockQty} ${item.unit} left.`,
+                        icon: 'error'
+                    }).then(() => {
+                        this.barcode = '';
+                        $("#autocompleteInput").focus();
+                    });
                 }
             }
             this.computeAmount();

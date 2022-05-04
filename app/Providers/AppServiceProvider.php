@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Repositories\ISystemRepository;
-use App\Repositories\SystemRepository;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(ISystemRepository::class,SystemRepository::class);
+        //
     }
 
     /**

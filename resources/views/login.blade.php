@@ -8,7 +8,7 @@
     <meta name="csrf-token" content="{{csrf_token()}}">
     <meta name="base-url" content="{{ url('/') }}">
     <meta name="keywords"
-          content="Point of Sale System, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
+          content="Point of Sale Landlord, Inventory, Stock Management, Items Barcode Generator, Businesses, Multi-Outlets, User Management, Suppliers and Customers Management"/>
     <meta name="description" content="Cutting Edge solution for perfect PoS Businesses and Outlets."/>
     <!-- Google Font -->
     <link rel="stylesheet"
