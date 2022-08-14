@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -40,6 +41,17 @@ class SaleItem extends Model
     const STATUS_PARTIAL = 'partial';
     const STATUS_RETURNED = 'returned';
 
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
+
     public function item()
     {
         return $this->belongsTo(Item::class,'item_id');
@@ -58,16 +70,14 @@ class SaleItem extends Model
     public function returnsInwardsAmount()
     {
         $amount = $this->returnsAmount();
-        //$discount = round($amount * $this->discount_rate / 100,0);
-        $discount = 0;
+        $discount = ceil(round($amount * $this->discount_rate / 100,0) / 100) * 100;
         return $amount - $discount;
     }
 
     public function discountOnReturns()
     {
         $amount = $this->returnsAmount();
-        $discount = ceil(round($amount * $this->discount_rate / 100, 2) / 100) * 100;
-        return $discount;
+        return ceil(round($amount * $this->discount_rate / 100, 2) / 100) * 100;
     }
 
     public function netReturns()
@@ -79,8 +89,7 @@ class SaleItem extends Model
 
     public function amountAfterReturns()
     {
-        $amount = $this->gross_amount - $this->returnsAmount();
-        return $amount;
+        return $this->gross_amount - $this->returnsAmount();
     }
 
     public function netAmountAfterReturns()

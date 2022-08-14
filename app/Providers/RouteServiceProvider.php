@@ -42,6 +42,8 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function map()
     {
+        $this->mapLandlordRoutes();
+
         $this->mapTenantRoutes();
 
         $this->mapApiRoutes();
@@ -90,5 +92,19 @@ class RouteServiceProvider extends ServiceProvider
         Route::middleware('web')
              ->namespace($this->namespace)
              ->group(base_path('routes/tenant.php'));
+    }
+
+    /**
+     * Define the "landlord" routes for the application.
+     *
+     * These routes are typically stateless.
+     *
+     * @return void
+     */
+    protected function mapLandlordRoutes()
+    {
+        Route::middleware('web')
+             ->namespace($this->namespace)
+             ->group(base_path('routes/landlord.php'));
     }
 }

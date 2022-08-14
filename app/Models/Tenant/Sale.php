@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use App\Traits\Commentable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -35,7 +36,7 @@ class Sale extends Model
 {
     use SoftDeletes, Commentable;
     protected $table = 'sales';
-    protected $dates = ['deleted_at', 'transact_date'];
+    protected $dates = ['deleted_at', 'sold_at'];
     protected $guarded = [];
 
     const STATUS_PENDING = 'pending';
@@ -48,6 +49,17 @@ class Sale extends Model
     const PAYMENT_STATUS_PARTIAL = 'partial';
     const PAYMENT_STATUS_SETTLED = 'settled';
     const PAYMENT_STATUS_CANCELED = 'canceled';
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
 
     public function sale_items()
     {
@@ -66,12 +78,12 @@ class Sale extends Model
 
     public function returns()
     {
-        return $this->hasOne(SalesReturn::class, 'sale_id');
+        return $this->hasOne(SaleReturn::class, 'sale_id');
     }
 
     public function receivable()
     {
-        return $this->hasOne(SalesReceivable::class, 'sale_id');
+        return $this->hasOne(SaleReceivable::class, 'sale_id');
     }
 
     public function paidAmount()

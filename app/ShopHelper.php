@@ -2,15 +2,71 @@
 
 namespace App;
 
+use App\Models\Landlord\Tenant;
 use App\Models\Tenant\Expense;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\ItemStock;
 use App\Models\Tenant\Sale;
 use App\Models\Tenant\Stock;
+use App\Models\Tenant\Setting;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class ShopHelper
 {
+    /**
+     * Fetch a tenant by subdomain
+     * @param $subdomain
+     *
+     * @return Tenant|null
+     */
+    public static function getTenantBySubdomain($subdomain): ?Tenant
+    {
+        $cid = strtolower("tenant:{$subdomain}");
+        $tenant = Cache::get($cid);
+        if(!empty($tenant)) {
+            return $tenant;
+        }
+
+        $tenant = Tenant::query()
+                        ->where('subdomain', $subdomain)
+                        ->first();
+
+        Cache::put($cid, $tenant, Carbon::now()->addHours(24));
+
+        return $tenant;
+    }
+
+    /**
+     * @param null $tenant_id
+     *
+     * @return Setting
+     * @throws \Exception
+     */
+    public static function getTenantSettings($tenant_id = null){
+        if(empty($tenant_id)) {
+            if(!Auth::guard('tenant')->check()){
+                throw new \Exception("You must be logged in to access the settings cache");
+            }
+            $user = Auth::guard('tenant')->user();
+            $tenant_id = $user->tenant_id;
+        }
+
+        $cid = "tenant:{$tenant_id}:settings";
+
+        $settings = Cache::get($cid);
+
+        if(!empty($settings)) {
+            return $settings;
+        }
+
+        $settings = Setting::query()->firstOrCreate(['tenant_id' => $tenant_id]);
+
+        Cache::put($cid, $settings, Carbon::now()->addHours(24));
+
+        return $settings;
+    }
 
     public static function toNearestHundredsLower($num) {
         return floor($num / 100) * 100;

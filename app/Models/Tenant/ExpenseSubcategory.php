@@ -3,6 +3,7 @@
 namespace App\Models\Tenant;
 
 use App\Models\Landlord\Tenant;
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -33,6 +34,17 @@ class ExpenseSubcategory extends Model
     const RECURRENCE_DAILY = 'daily';
     const RECURRENCE_MONTHLY = 'monthly';
     const RECURRENCE_YEARLY = 'yearly';
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
 
 
     public function expenses()

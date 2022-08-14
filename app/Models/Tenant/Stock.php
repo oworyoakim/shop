@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -37,7 +38,16 @@ class Stock extends Model {
     const STATUS_FINISHED = 'finished';
     const STATUS_EXPIRED = 'expired';
 
-
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
 
     public function scopeActive(Builder $query)
     {

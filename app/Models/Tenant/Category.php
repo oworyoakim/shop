@@ -10,11 +10,11 @@ use Illuminate\Support\Carbon;
  * Class Category
  * @package App\Models
  * @property int id
+ * @property int tenant_id
  * @property string title
  * @property string slug
  * @property string description
  * @property int user_id
- * @property int tenant_id
  * @property Carbon created_at
  * @property Carbon updated_at
  * @property Carbon deleted_at

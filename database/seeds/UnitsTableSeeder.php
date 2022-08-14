@@ -1,8 +1,9 @@
 <?php
 namespace Database\Seeders;
 
-use App\Models\Unit;
+use App\Models\Tenant\Unit;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
 
 class UnitsTableSeeder extends Seeder
 {
@@ -14,43 +15,72 @@ class UnitsTableSeeder extends Seeder
      */
     public function run()
     {
-        Unit::query()->truncate();
-        Unit::create([
-            'title' => 'Kilograms',
-            'slug' => 'kgs',
-            'description' => 'Kilograms (1000 grams)',
-        ]);
-        Unit::create([
-            'title' => 'Pieces',
-            'slug' => 'pcs',
-            'description' => 'Pieces',
-        ]);
-        Unit::create([
-            'title' => 'Packets',
-            'slug' => 'pkts',
-            'description' => 'Packets',
-        ]);
-        Unit::create([
-            'title' => 'Litres',
-            'slug' => 'ltrs',
-            'description' => 'Litres',
-        ]);
-        Unit::create([
-            'title' => 'Bars',
-            'slug' => 'bars',
-            'description' => 'Bars',
-        ]);
-        Unit::create([
+        $units = [
+            [
+                'title' => 'Grams',
+                'slug' => 'grm',
+                'description' => 'Grams',
+            ],
+            [
+                'title' => 'Kilograms',
+                'slug' => 'kgs',
+                'description' => 'Kilograms (1000 grams)',
+            ],
+            [
+                'title' => 'Pieces',
+                'slug' => 'pcs',
+                'description' => 'Pieces',
+            ],
+            [
+                'title' => 'Packets',
+                'slug' => 'pkts',
+                'description' => 'Packets',
+            ],
+            [
+                'title' => 'Litres',
+                'slug' => 'ltrs',
+                'description' => 'Litres',
+            ],
+            [
+                'title' => 'Bars',
+                'slug' => 'bars',
+                'description' => 'Bars',
+            ],
+            [
+                'title' => 'Crates',
+                'slug' => 'crts',
+                'description' => 'Crates',
+            ],
+            [
+                'title' => 'Bottles',
+                'slug' => 'btls',
+                'description' => 'Bottles',
+            ],
+            [
+                'title' => 'Bags',
+                'slug' => 'bags',
+                'description' => 'Bags',
+            ],
+            [
+                'title' => 'Meters',
+                'slug' => 'mtrs',
+                'description' => 'Meters',
+            ],
+            [
+                'title' => 'Foots',
+                'slug' => 'fts',
+                'description' => 'Foots',
+            ],
+            [
+                'title' => 'Yards',
+                'slug' => 'yrds',
+                'description' => 'Yards',
+            ]
+        ];
 
-            'title' => 'Crates',
-            'slug' => 'crts',
-            'description' => 'Crates',
-        ]);
-        Unit::create([
-            'title' => 'Bottles',
-            'slug' => 'btls',
-            'description' => 'Bottles',
-        ]);
+        foreach ($units as $unit) {
+            Unit::query()->updateOrCreate(Arr::only($unit, 'slug'), Arr::except($unit, 'slug'));
+        }
     }
 
 }

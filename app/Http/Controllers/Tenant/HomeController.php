@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\TenantBaseController;
-use App\Models\Category;
-use App\Models\Customer;
-use App\Models\Role;
-use App\Models\Supplier;
-use App\Models\Unit;
+use App\Models\Tenant\Category;
+use App\Models\Tenant\Customer;
+use App\Models\Tenant\Supplier;
+use App\Models\Tenant\Unit;
 use App\Models\Country;
 use App\ShopHelper;
 use Exception;
@@ -29,6 +28,18 @@ class HomeController extends TenantBaseController
         return redirect()->route('login');
     }
 
+    public function pos() {
+        return view('pos.layout');
+    }
+
+    public function manager() {
+        return view('manager.layout');
+    }
+
+    public function admin() {
+        return view('admin.layout');
+    }
+
     public function getUserData(Request $request)
     {
         try
@@ -43,26 +54,24 @@ class HomeController extends TenantBaseController
             $user->avatar = $loggedInUser->avatar;
             $user->email = $loggedInUser->email;
             $user->permissions = $loggedInUser->permissions;
-            $user->role = null;
+            $user->role = $loggedInUser->role;
             $user->isAdmin = $loggedInUser->isAdmin();
             $user->isManager = $loggedInUser->isManager();
             $user->isCashier = $loggedInUser->isCashier();
             return response()->json($user);
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("GET_USER_DATA: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("GET_USER_DATA", $ex);
         }
     }
 
-    public function getFormSelectionOptions(Request $request)
+    public function getFormOptions(Request $request)
     {
         try
         {
             $data = [
                 'units' => Unit::all(['id', 'title']),
                 'categories' => Category::all(['id', 'title']),
-                'roles' => Role::all(['id', 'name']),
                 'suppliers' => Supplier::all(['id', 'name', 'email', 'phone']),
                 'customers' => Customer::all(['id', 'name', 'email', 'phone']),
             ];

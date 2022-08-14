@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -31,15 +32,26 @@ class Customer extends Model
 
     protected $guarded = [];
 
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
+
     public function orders() {
         return $this->hasMany(Sale::class);
     }
 
     public function returns() {
-        return $this->hasMany(SalesReturn::class);
+        return $this->hasMany(SaleReturn::class);
     }
 
     public function receivables() {
-        return $this->hasMany(SalesReceivable::class);
+        return $this->hasMany(SaleReceivable::class);
     }
 }

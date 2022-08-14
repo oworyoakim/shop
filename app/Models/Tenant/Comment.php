@@ -7,9 +7,9 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int id
+ * @property  int tenant_id
  * @property string body
  * @property  int user_id
- * @property  int tenant_id
  * @property  int commentable_id
  * @property  string commentable_type
  * @property  Carbon created_at

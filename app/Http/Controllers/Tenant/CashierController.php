@@ -3,23 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\TenantBaseController;
-use App\Models\Branch;
-use App\Models\Comment;
-use App\Models\Item;
-use App\Models\ItemStock;
-use App\Models\Purchase;
-use App\Models\PurchaseItem;
-use App\Models\PurchasesPayable;
-use App\Models\Stock;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Carbon;
-use Cartalyst\Sentinel\Laravel\Facades\Sentinel;
-use Exception;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
-use stdClass;
-use DNS1D;
 
 class CashierController extends TenantBaseController
 {
@@ -29,10 +13,9 @@ class CashierController extends TenantBaseController
         {
             $data = [];
             return response()->json($data);
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("SHOP_DASHBOARD: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('SHOP_DASHBOARD', $ex);
         }
     }
 
@@ -40,7 +23,7 @@ class CashierController extends TenantBaseController
     {
         try
         {
-            $shopInfo = new stdClass();
+            $shopInfo = new \stdClass();
             $shopInfo->branchId = 1;
             $shopInfo->branchName = "";
             $shopInfo->branchBalance = 0;
@@ -51,10 +34,20 @@ class CashierController extends TenantBaseController
             $shopInfo->canCreateSupplier = true;
 
             return response()->json($shopInfo);
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("GET_SHOP_INFO: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('GET_SHOP_INFO', $ex);
+        }
+    }
+
+    public function completeSaleTransaction(Request $request)
+    {
+        try
+        {
+            return response()->json('Ok');
+        } catch (\Throwable $ex)
+        {
+            return $this->handleJsonRequestException('COMPLETE_SALE_TRANSACTION', $ex);
         }
     }
 
@@ -63,10 +56,9 @@ class CashierController extends TenantBaseController
         try
         {
             return response()->json('Ok');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("CANCEL_SALE_TRANSACTION: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('CANCEL_SALE_TRANSACTION', $ex);
         }
     }
 
@@ -75,10 +67,9 @@ class CashierController extends TenantBaseController
         try
         {
             return response()->json('Ok');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("CANCEL_PURCHASE_TRANSACTION: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('CANCEL_PURCHASE_TRANSACTION', $ex);
         }
     }
 }

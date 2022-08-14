@@ -2,15 +2,13 @@
 
 namespace App\Models\Landlord;
 
+use App\Models\Tenant\Customer;
 use App\Models\Tenant\ExpenseCategory;
 use App\Models\Tenant\ExpenseSubcategory;
 use App\Models\Tenant\Setting;
-use App\ShopHelper;
+use App\Models\Tenant\Supplier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class Tenant extends Model {
@@ -50,11 +48,11 @@ class Tenant extends Model {
             'short_name' => null,
             'email' => $this->email,
             'currency' => 'UGX',
-            'slogan' => 'Best odds for your cash!',
-            'invoice_disclaimer' => 'Best odds for your cash!',
-            'enable_tax' => 0,
+            'slogan' => 'Your Shopping Partner!',
+            'invoice_disclaimer' => 'Goods Once Sold Are Not Returnable!',
+            'enable_tax' => false,
             'tax_percent' => 15,
-            'enable_bonus' => 0,
+            'enable_bonus' => false,
             'bonus_percent' => 10,
             'cancel_order_limit' => 10,
             'numeric_percent' => 75,
@@ -92,7 +90,6 @@ class Tenant extends Model {
                     ['title' => "TV Repairs"],
                     ['title' => "Computer Purchase"],
                     ['title' => "Furniture"],
-                    ['title' => "Landlord"],
                     ['title' => "License"],
                     ['title' => "Lunch"],
                     ['title' => "Water"],
@@ -116,6 +113,41 @@ class Tenant extends Model {
             }
         }
         Log::info("Seeded tenant expense categories and subcategories", ['subdomain' => $this->subdomain]);
+        return $this;
+    }
+
+    public function seedSuppliers()
+    {
+        Log::info("Seeding Tenant Suppliers", ['subdomain' => $this->subdomain]);
+        Supplier::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'name' => 'Default Supplier'
+        ], [
+            'phone' => '+256770000000',
+            'email' => 'supplier@shop.kim',
+            'address' => 'Kikuubo',
+            'city' => 'Kampala',
+            'country' => 'Uganda',
+        ]);
+        Log::info("Seeded Tenant Suppliers", ['subdomain' => $this->subdomain]);
+        return $this;
+    }
+
+    public function seedCustomers()
+    {
+        Log::info("Seeding Tenant Customers", ['subdomain' => $this->subdomain]);
+        Customer::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'name' => 'Default Customer',
+        ],[
+            'phone' => '+256770000000',
+            'email' => 'customer@shop.kim',
+            'address' => 'Kikuubo',
+            'city' => 'Kampala',
+            'country' => 'Uganda',
+        ]);
+
+        Log::info("Seeded Tenant Customers", ['subdomain' => $this->subdomain]);
         return $this;
     }
 

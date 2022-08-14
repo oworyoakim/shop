@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use App\Traits\Commentable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -37,6 +38,17 @@ class Item extends Model
     const ACCOUNT_SALES_ONLY = 'sales';
     const ACCOUNT_PURCHASES_ONLY = 'purchases';
     const ACCOUNT_BOTH = 'both';
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
 
     public function category()
     {

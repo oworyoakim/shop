@@ -3,6 +3,7 @@
 namespace App\Models\Tenant;
 
 use App\Models\Landlord\Tenant;
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -27,6 +28,17 @@ class ExpenseCategory extends Model
     protected $table = 'expense_categories';
     protected $dates = ['deleted_at'];
     protected $guarded = [];
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
 
     public function expense_subcategories()
     {

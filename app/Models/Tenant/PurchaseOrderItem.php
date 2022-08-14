@@ -25,16 +25,16 @@ use Illuminate\Support\Carbon;
  */
 class PurchaseOrderItem extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'purchase_order_items';
     protected $guarded = [];
 
-    public function item(){
+    public function item()
+    {
         return $this->belongsTo(Item::class);
     }
 
-    public function order(){
-        return $this->belongsTo(PurchaseOrder::class,'purchase_order_id');
+    public function order()
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 }

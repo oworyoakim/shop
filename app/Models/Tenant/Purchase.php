@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use App\Traits\Commentable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -36,7 +37,7 @@ class Purchase extends Model
 {
     use SoftDeletes, Commentable;
     protected $table = 'purchases';
-    protected $dates = ['deleted_at', 'transact_date'];
+    protected $dates = ['deleted_at', 'purchased_at'];
 
     protected $guarded = [];
 
@@ -50,6 +51,17 @@ class Purchase extends Model
     const PAYMENT_STATUS_PARTIAL = 'partial';
     const PAYMENT_STATUS_SETTLED = 'settled';
     const PAYMENT_STATUS_CANCELED = 'canceled';
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
 
     public function scopeCanceled(Builder $query)
     {
@@ -88,12 +100,12 @@ class Purchase extends Model
 
     public function returns()
     {
-        return $this->hasOne(PurchasesReturn::class, 'purchase_id');
+        return $this->hasOne(PurchaseReturn::class, 'purchase_id');
     }
 
     public function payable()
     {
-        return $this->hasOne(PurchasesPayable::class, 'purchase_id');
+        return $this->hasOne(PurchasePayable::class, 'purchase_id');
     }
 
     public function paidAmount()

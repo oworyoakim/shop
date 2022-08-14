@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -37,6 +38,17 @@ class Branch extends Model
 
     protected $guarded = [];
 
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
+
     public function suppliers()
     {
         return $this->hasMany(Supplier::class);
@@ -69,12 +81,12 @@ class Branch extends Model
 
     public function receivables()
     {
-        return $this->hasMany(SalesReceivable::class, 'branch_id');
+        return $this->hasMany(SaleReceivable::class, 'branch_id');
     }
 
     public function payables()
     {
-        return $this->hasMany(PurchasesPayable::class, 'branch_id');
+        return $this->hasMany(PurchasePayable::class, 'branch_id');
     }
 
     public function employees()
@@ -156,7 +168,7 @@ class Branch extends Model
     {
         return $this->daysReceivables($date)
                     ->get()
-                    ->reduce(function (SalesReceivable $receivable, $amount) {
+                    ->reduce(function (SaleReceivable $receivable, $amount) {
                         return $amount + $receivable->balance();
                     }, 0);
     }
@@ -195,7 +207,7 @@ class Branch extends Model
     {
         return $this->monthsReceivables($date)
                     ->get()
-                    ->reduce(function (SalesReceivable $receivable, $amount) {
+                    ->reduce(function (SaleReceivable $receivable, $amount) {
                         return $amount + $receivable->balance();
                     }, 0);
     }
@@ -341,7 +353,7 @@ class Branch extends Model
     {
         return $this->daysPayables($date)
                     ->get()
-                    ->reduce(function (PurchasesPayable $payable, $amount) {
+                    ->reduce(function (PurchasePayable $payable, $amount) {
                         return $amount + $payable->balance();
                     }, 0);
     }
@@ -359,7 +371,7 @@ class Branch extends Model
     {
         return $this->monthsPayables($date)
                     ->get()
-                    ->reduce(function (PurchasesPayable $payable, $amount) {
+                    ->reduce(function (PurchasePayable $payable, $amount) {
                         return $amount + $payable->balance();
                     }, 0);
     }
@@ -368,7 +380,7 @@ class Branch extends Model
     {
         return $this->payables()
                     ->get()
-                    ->reduce(function (PurchasesPayable $payable, $amount) {
+                    ->reduce(function (PurchasePayable $payable, $amount) {
                         return $amount + $payable->balance();
                     }, 0);
     }

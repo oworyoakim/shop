@@ -8,6 +8,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use App\Traits\PermissionsTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -93,6 +94,18 @@ class User extends Authenticatable
         self::TYPE_SUPERVISORS,
     ];
 
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
+
+
 
     public function getFullNameAttribute()
     {
@@ -116,7 +129,7 @@ class User extends Authenticatable
 
     public function receivables()
     {
-        return $this->hasMany(SalesReceivable::class, 'user_id');
+        return $this->hasMany(SaleReceivable::class, 'user_id');
     }
 
 
@@ -132,7 +145,7 @@ class User extends Authenticatable
 
     public function payables()
     {
-        return $this->hasMany(PurchasesPayable::class, 'user_id');
+        return $this->hasMany(PurchasePayable::class, 'user_id');
     }
 
     public function uncanceledSales()
@@ -167,7 +180,7 @@ class User extends Authenticatable
     {
         return $this->daysReceivables($date)
                     ->get()
-                    ->reduce(function (SalesReceivable $receivable, $amount) {
+                    ->reduce(function (SaleReceivable $receivable, $amount) {
                         return $amount + $receivable->balance();
                     }, 0);
     }
@@ -186,7 +199,7 @@ class User extends Authenticatable
     {
         return $this->monthsTotalReceivables($date)
                     ->get()
-                    ->reduce(function (SalesReceivable $receivable, $amount) {
+                    ->reduce(function (SaleReceivable $receivable, $amount) {
                         return $amount + $receivable->balance();
                     }, 0);
     }
@@ -206,7 +219,7 @@ class User extends Authenticatable
     {
         return $this->receivables()
                     ->get()
-                    ->reduce(function (SalesReceivable $receivable, $amount) {
+                    ->reduce(function (SaleReceivable $receivable, $amount) {
                         return $amount + $receivable->balance();
                     }, 0);
     }
@@ -226,7 +239,7 @@ class User extends Authenticatable
     {
         return $this->daysPayables($date)
                     ->get()
-                    ->reduce(function (PurchasesPayable $payable, $amount) {
+                    ->reduce(function (PurchasePayable $payable, $amount) {
                         return $amount + $payable->balance();
                     }, 0);
     }
@@ -254,7 +267,7 @@ class User extends Authenticatable
     {
         return $this->monthsPayables($date)
                     ->get()
-                    ->reduce(function (PurchasesPayable $payable, $amount) {
+                    ->reduce(function (PurchasePayable $payable, $amount) {
                         return $amount + $payable->balance();
                     }, 0);
     }
@@ -263,7 +276,7 @@ class User extends Authenticatable
     {
         return $this->payables()
                     ->get()
-                    ->reduce(function (PurchasesPayable $payable, $amount) {
+                    ->reduce(function (PurchasePayable $payable, $amount) {
                         return $amount + $payable->balance();
                     }, 0);
     }

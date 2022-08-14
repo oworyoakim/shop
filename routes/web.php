@@ -11,7 +11,6 @@
 |
 */
 
-use App\Http\Controllers\Landlord\AccountController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [AccountController::class, 'index']);
+Route::get('/', [\App\Http\Controllers\HomeController::class, 'index']);

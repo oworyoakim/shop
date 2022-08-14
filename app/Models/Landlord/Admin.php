@@ -19,7 +19,18 @@ class Admin extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'first_name',
+        'last_name',
+        'email',
+        'password',
+        'username',
+        'group',
+        'permissions',
+        'login_token',
+        'last_login',
+        'avatar',
+        'password_last_changed',
+        'remember_token',
     ];
 
     /**
@@ -38,6 +49,15 @@ class Admin extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_login' => 'datetime',
+        'password_last_changed' => 'datetime',
         'permissions' => 'array',
     ];
+
+    const GROUP_ADMINISTRATORS = 'administrators';
+
+    public function isBlocked()
+    {
+        return !$this->active;
+    }
 }

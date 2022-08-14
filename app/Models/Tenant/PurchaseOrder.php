@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -33,12 +34,22 @@ class PurchaseOrder extends Model
     use SoftDeletes;
 
     protected $table = 'purchase_orders';
-    protected $dates = ['order_date','deleted_at'];
+    protected $dates = ['order_date', 'deleted_at'];
     protected $guarded = [];
 
     const STATUS_PENDING = 'pending';
     const STATUS_COMPLETED = 'completed';
-    const STATUS_CANCELED = 'canceled';
+
+    /**
+     * The "booting" method of the model.
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::addGlobalScope(new TenantScope);
+    }
 
 
     public function orderlines()
@@ -59,11 +70,6 @@ class PurchaseOrder extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function scopeCanceled(Builder $query)
-    {
-        return $query->where('status', self::STATUS_CANCELED);
     }
 
     public function scopePending(Builder $query)
