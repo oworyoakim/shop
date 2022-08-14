@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\TenantBaseController;
+use App\Models\Country;
+use App\Models\Landlord\Unit;
 use App\Models\Tenant\Category;
 use App\Models\Tenant\Customer;
 use App\Models\Tenant\Supplier;
-use App\Models\Tenant\Unit;
-use App\Models\Country;
 use App\ShopHelper;
 use Exception;
 use Illuminate\Http\Request;

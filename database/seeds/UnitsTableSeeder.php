@@ -1,7 +1,7 @@
 <?php
 namespace Database\Seeders;
 
-use App\Models\Tenant\Unit;
+use App\Models\Landlord\Unit;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Arr;
 

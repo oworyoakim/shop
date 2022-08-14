@@ -3,7 +3,7 @@
 namespace App\Models\Tenant;
 
 use App\Models\Scopes\TenantScope;
-use App\Traits\Commentable;
+use App\Traits\Tenant\Commentable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\TenantBaseController;
-use App\Models\Tenant\Unit;
+use App\Models\Landlord\Unit;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;

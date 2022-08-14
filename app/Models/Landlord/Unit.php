@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models\Tenant;
+namespace App\Models\Landlord;
 
+use App\Models\Tenant\Item;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -10,7 +11,6 @@ use Illuminate\Support\Carbon;
  * Class Unit
  * @package App\Models
  * @property int id
- * @property int tenant_id
  * @property string title
  * @property string slug
  * @property string description
