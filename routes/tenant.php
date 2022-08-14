@@ -28,7 +28,7 @@ Route::namespace("Tenant")
          Route::get('/login', [AccountController::class ,'login']);
          Route::post('/login', [AccountController::class ,'processLogin']);
 
-         Route::group(['middleware' => ['ensure.authenticated']], function () {
+         Route::middleware('tenant.check.auth')->group(function () {
              Route::get('/', [HomeController::class, 'index']);
              Route::get('/user-data', [HomeController::class, 'getUserData']);
              Route::post('/logout', 'AccountController@logout')->name('logout');

@@ -15,7 +15,7 @@ class AccountController extends TenantBaseController
     {
         if (!Auth::guard('tenant')->check())
         {
-            return view('auth.login');
+            return view('tenant.login');
         }
         $user = Auth::guard('tenant')->user();
         if ($user->isAdmin() || $user->isSupervisor() || $user->isAccountant())

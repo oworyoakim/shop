@@ -58,8 +58,6 @@ class TenantConnection {
         if(! $tenant->authorized) {
             abort(401);
         }
-        // configure cache key for this tenant
-        $tenant->setCacheKey();
         // put the subdomain in the session
         $request->session()->put('subdomain', $subdomain);
         // put the tenant in the session
