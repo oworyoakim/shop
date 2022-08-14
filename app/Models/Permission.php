@@ -26,7 +26,7 @@ class Permission extends Model
     {
         $permission = new \stdClass();
         $permission->id = $this->id;
-        $permission->name = $this->name;
+        $permission->title = $this->title;
         $permission->slug = $this->slug;
         $permission->description = $this->description;
         $permission->parentId = $this->parent_id;
