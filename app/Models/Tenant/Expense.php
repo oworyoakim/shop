@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon expense_date
  * @property string transcode
  * @property string comment
+ * @property int expense_category_id
  * @property int expense_type_id
  * @property int tenant_id
  * @property int branch_id

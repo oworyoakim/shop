@@ -1,13 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
+use App\Models\Permission;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\Schema;
 
-class CreateExpenseTypesTable extends Migration
+class CreatePermissionsTable extends Migration
 {
-    private $table = 'expense_types';
-
+    private $table = 'permissions';
     /**
      * Run the migrations.
      *
@@ -17,13 +17,12 @@ class CreateExpenseTypesTable extends Migration
     {
         Schema::create($this->table, function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('tenant_id');
+            $table->unsignedBigInteger('parent_id')->default(0);
             $table->string('title');
+            $table->string('slug')->unique();
             $table->text('description')->nullable();
-            $table->enum('recurrence',['none','daily','monthly','yearly'])->default('none');
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->enum('category', [Permission::CATEGORY_LANDLORD, Permission::CATEGORY_TENANT]);
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -34,6 +33,6 @@ class CreateExpenseTypesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists($this->table);
+        Schema::drop($this->table);
     }
 }

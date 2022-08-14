@@ -21,7 +21,7 @@ class CreateSettingsTable extends Migration
             $table->string('short_name')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
-            $table->string('currency_symbol')->nullable();
+            $table->string('currency')->nullable();
             $table->text('slogan')->nullable();
             $table->text('invoice_disclaimer')->nullable();
             $table->boolean('enable_tax')->default(false);

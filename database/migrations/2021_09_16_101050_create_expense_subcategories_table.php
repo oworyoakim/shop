@@ -1,12 +1,13 @@
 <?php
 
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\Schema;
 
-class CreatePermissionsTable extends Migration
+class CreateExpenseSubcategoriesTable extends Migration
 {
-    private $table = 'permissions';
+    private $table = 'expense_subcategories';
+
     /**
      * Run the migrations.
      *
@@ -16,11 +17,14 @@ class CreatePermissionsTable extends Migration
     {
         Schema::create($this->table, function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('parent_id')->default(0);
+            $table->unsignedBigInteger('tenant_id');
+            $table->unsignedInteger('expense_category_id')->index();
             $table->string('title');
-            $table->string('slug')->unique();
             $table->text('description')->nullable();
+            $table->enum('recurrence',['none','daily','monthly','yearly'])->default('none');
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -31,6 +35,6 @@ class CreatePermissionsTable extends Migration
      */
     public function down()
     {
-        Schema::drop($this->table);
+        Schema::dropIfExists($this->table);
     }
 }

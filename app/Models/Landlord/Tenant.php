@@ -2,13 +2,16 @@
 
 namespace App\Models\Landlord;
 
+use App\Models\Permission;
 use App\Models\Tenant\Customer;
 use App\Models\Tenant\ExpenseCategory;
 use App\Models\Tenant\ExpenseSubcategory;
 use App\Models\Tenant\Setting;
 use App\Models\Tenant\Supplier;
+use App\Models\Tenant\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class Tenant extends Model {
@@ -28,7 +31,7 @@ class Tenant extends Model {
         'city' => 'nullable|string',
         'address' => 'nullable|string',
         'website' => 'nullable|string',
-        'credentials.loginName' => 'required',
+        'credentials.loginName' => 'required|same:subdomain',
         'credentials.loginPassword' => 'required',
     ];
 
@@ -40,9 +43,9 @@ class Tenant extends Model {
         return $query->where('authorized',false);
     }
 
-    public function seedSettings()
+    public function updateSettings()
     {
-        Log::info("Updating tenant settings", ['subdomain' => $this->subdomain]);
+        Log::info("Updating Tenant Settings", ['subdomain' => $this->subdomain]);
         Setting::query()->updateOrCreate(['tenant_id' => $this->id], [
             'name' => $this->name,
             'short_name' => null,
@@ -58,7 +61,7 @@ class Tenant extends Model {
             'numeric_percent' => 75,
             'logo' => $this->logo,
         ]);
-        Log::info("Updated tenant settings", ['subdomain' => $this->subdomain]);
+        Log::info("Updated Tenant Settings", ['subdomain' => $this->subdomain]);
         return $this;
     }
 
@@ -148,6 +151,34 @@ class Tenant extends Model {
         ]);
 
         Log::info("Seeded Tenant Customers", ['subdomain' => $this->subdomain]);
+        return $this;
+    }
+
+    public function createAdminUser(string $password){
+        Log::info("Creating Tenant Admin User", ['subdomain' => $this->subdomain]);
+        // Seed Tenant Admin User
+        // Give all the permissions
+        $permissions = [];
+        foreach (Permission::forTenant()->get() as $permission) {
+            $permissions[$permission->slug] = true;
+        }
+
+        $adminCredentials = [
+            "password" => Hash::make($password),
+            "first_name" => 'Admin',
+            "last_name" => 'Admin',
+            "group" => User::TYPE_ADMINISTRATORS,
+            "avatar" => '/images/avatar.png',
+            'active' => true,
+            'permissions' => $permissions,
+        ];
+        // create the admin user
+        User::query()->updateOrCreate([
+            "tenant_id" => $this->id,
+            "username" => $this->subdomain,
+        ], $adminCredentials);
+
+        Log::info("Created Tenant Admin User", ['subdomain' => $this->subdomain]);
         return $this;
     }
 

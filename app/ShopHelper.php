@@ -9,12 +9,49 @@ use App\Models\Tenant\ItemStock;
 use App\Models\Tenant\Sale;
 use App\Models\Tenant\Stock;
 use App\Models\Tenant\Setting;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ShopHelper
 {
+    /**
+     * Creates a tenant and seeds tenant specific data
+     *
+     * @param array $data
+     *
+     * @return Tenant
+     * @throws \Exception
+     */
+    public static function createTenant(array $data)
+    {
+        return DB::transaction(function () use ($data) {
+            $attributes = Arr::except($data, ['username', 'password']);
+            Log::info("Creating Tenant", $attributes);
+            // create the tenant
+            $tenant = Tenant::query()->create($attributes);
+            Log::info("Created Tenant", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
+            //dd($tenant);
+            Log::info("Seed Tenant Settings", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
+            // update settings
+            $tenant->updateSettings();
+            Log::info("Seed tenant leagues ratings", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
+            // seed suppliers
+            $tenant->seedSuppliers();
+            // seed customers
+            $tenant->seedCustomers();
+            // seed expense categories and subcategories
+            $tenant->seedExpenseCategoriesAndSubCategories();
+            // create tenant admin user
+            $tenant->createAdminUser($data['password']);
+            // return the created tenant
+            return $tenant;
+        });
+    }
+
     /**
      * Fetch a tenant by subdomain
      * @param $subdomain
