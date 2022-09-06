@@ -12,32 +12,47 @@ use App\ShopHelper;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use stdClass;
 
 class HomeController extends TenantBaseController
 {
 
-    public function index()
+    public function healthCheck(Request $request)
     {
-        if ($user = Auth::guard('tenant')->user())
-        {
-            return view('layout', compact('user'));
-        }
-        return redirect()->route('login');
+        $version = app()->version();
+        return response()->json($version);
     }
 
-    public function pos() {
+    public function index()
+    {
+        $user = $this->getUser();
+
+        if ($user->isCashier())
+        {
+            return $this->pos();
+        }
+
+        if ($user->isManager())
+        {
+            return $this->manager();
+        }
+
+        return $this->admin();
+    }
+
+    public function pos()
+    {
         return view('pos.layout');
     }
 
-    public function manager() {
+    public function manager()
+    {
         return view('manager.layout');
     }
 
-    public function admin() {
-        return view('admin.layout');
+    public function admin()
+    {
+        return view('tenant.admin.layout');
     }
 
     public function getUserData(Request $request)
@@ -45,16 +60,15 @@ class HomeController extends TenantBaseController
         try
         {
             $loggedInUser = $this->getUser();
-            $user = new stdClass();
+            $user = new \stdClass();
             $user->id = $loggedInUser->id;
             $user->firstName = $loggedInUser->first_name;
             $user->lastName = $loggedInUser->last_name;
-            $user->fullName = $loggedInUser->fullName();
             $user->username = $loggedInUser->username;
             $user->avatar = $loggedInUser->avatar;
             $user->email = $loggedInUser->email;
             $user->permissions = $loggedInUser->permissions;
-            $user->role = $loggedInUser->role;
+            $user->group = $loggedInUser->group;
             $user->isAdmin = $loggedInUser->isAdmin();
             $user->isManager = $loggedInUser->isManager();
             $user->isCashier = $loggedInUser->isCashier();

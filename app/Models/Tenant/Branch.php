@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string city
  * @property string country
  * @property string address
+ * @property float balance
  * @property bool active
  * @property int user_id
  * @property Carbon created_at
@@ -125,16 +126,6 @@ class Branch extends Model
     public function isActive()
     {
         return !!$this->active;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getBalance()
-    {
-        return $this->employees()->get()->reduce(function ($balance, User $employee) {
-            return $balance + $employee->getBalance();
-        }, 0);
     }
 
 
@@ -534,6 +525,34 @@ class Branch extends Model
     }
 
     /**************    END EXPENSES HELPERS         ***********/
+
+
+    public function getDetails() {
+        $branch = new \stdClass();
+        $branch->id = $this->id;
+        $branch->name = $this->name;
+        $branch->phone = $this->phone;
+        $branch->email = $this->email;
+        $branch->country = $this->country;
+        $branch->city = $this->city;
+        $branch->address = $this->address;
+        $branch->balance = $this->balance;
+
+        $branch->manager = null;
+
+        $manager = $this->manager();
+        if($manager){
+            $branch->manager = new \stdClass();
+            $branch->manager->id = $manager->id;
+            $branch->manager->firstName = $manager->first_name;
+            $branch->manager->lastName = $manager->last_name;
+            $branch->manager->fullName = $manager->fullName();
+            $branch->manager->email = $manager->email;
+            $branch->manager->balance = $manager->getBalance();
+        }
+
+        return $branch;
+    }
 
 
 }

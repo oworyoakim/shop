@@ -1,4 +1,12 @@
 {
+    "/js/landlord.js": "/js/landlord.js",
+    "/js/admin.js": "/js/admin.js",
+    "/js/manager.js": "/js/manager.js",
     "/js/app.js": "/js/app.js",
-    "/css/app.css": "/css/app.css"
+    "/js/auth.js": "/js/auth.js",
+    "/css/app.css": "/css/app.css",
+    "/css/manager.css": "/css/manager.css",
+    "/css/admin.css": "/css/admin.css",
+    "/css/landlord.css": "/css/landlord.css",
+    "/css/auth.css": "/css/auth.css"
 }

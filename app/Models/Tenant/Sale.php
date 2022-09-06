@@ -61,6 +61,10 @@ class Sale extends Model
         static::addGlobalScope(new TenantScope);
     }
 
+    public function journal_entry() {
+        return $this->morphOne(JournalEntry::class, 'transactable');
+    }
+
     public function sale_items()
     {
         return $this->hasMany(SaleItem::class);

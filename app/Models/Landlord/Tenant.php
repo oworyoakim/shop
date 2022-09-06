@@ -6,11 +6,14 @@ use App\Models\Permission;
 use App\Models\Tenant\Customer;
 use App\Models\Tenant\ExpenseCategory;
 use App\Models\Tenant\ExpenseSubcategory;
+use App\Models\Tenant\GeneralLedgerAccount;
+use App\Models\Tenant\OrderReport;
 use App\Models\Tenant\Setting;
 use App\Models\Tenant\Supplier;
 use App\Models\Tenant\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -41,6 +44,24 @@ class Tenant extends Model {
 
     public function scopeInactive(Builder $query){
         return $query->where('authorized',false);
+    }
+
+    public function scopeWithBranchesCount(Builder $builder){
+        return $builder->selectSub(function ($query){
+            $query->from('branches')
+                  ->whereColumn('tenant_id', 'tenants.id')
+                  ->selectRaw("COUNT(*)")
+                  ->limit(1);
+        }, 'branches');
+    }
+
+    public function scopeWithCurrency(Builder $builder){
+        return $builder->selectSub(function ($query){
+            $query->from('settings')
+                  ->whereColumn('tenant_id', 'tenants.id')
+                  ->select("currency")
+                  ->limit(1);
+        }, 'currency');
     }
 
     public function updateSettings()
@@ -151,6 +172,104 @@ class Tenant extends Model {
         ]);
 
         Log::info("Seeded Tenant Customers", ['subdomain' => $this->subdomain]);
+        return $this;
+    }
+
+    public function seedGeneralLedgerAccounts()
+    {
+        Log::info("Seeding Tenant GeneralLedgerAccounts", ['subdomain' => $this->subdomain]);
+        // Assets
+        $asset_gla = GeneralLedgerAccount::updateOrCreate([
+            'name' => GeneralLedgerAccount::ASSET_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::CASH_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::BANK_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::SALES_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::ACCOUNTS_RECEIVABLE_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::PURCHASES_VAT_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::PURCHASES_DISCOUNTS_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::DRAWINGS_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id
+        ]);
+
+
+        // Liabilities
+        $liability_gla = GeneralLedgerAccount::updateOrCreate([
+            'name' => GeneralLedgerAccount::LIABILITY_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::PURCHASES_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            'parent_id' => $liability_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::CAPITAL_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            'parent_id' => $liability_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::ACCOUNTS_PAYABLE_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            'parent_id' => $liability_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::SALES_VAT_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            'parent_id' => $liability_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::SALES_DISCOUNTS_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            'parent_id' => $liability_gla->id
+        ]);
+
+        GeneralLedgerAccount::createOrUpdate([
+            'name' => GeneralLedgerAccount::EXPENSES_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            'parent_id' => $liability_gla->id
+        ]);
+
+        Log::info("Seeded Tenant GeneralLedgerAccounts", ['subdomain' => $this->subdomain]);
         return $this;
     }
 

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\View;
 
 class EnsureAuthenticated {
     use UsesLoggedInUser;
+
     /**
      * Handle an incoming request.
      *
@@ -18,7 +19,7 @@ class EnsureAuthenticated {
      * @return mixed
      */
     public function handle(Request $request, \Closure $next) {
-        if (!$this->isLoggedIn()){
+        if (!$this->isLoggedIn()) {
             Auth::guard('tenant')->logout();
             $msg = 'Unauthorized Access!';
             if ($request->expectsJson()) {

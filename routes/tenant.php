@@ -11,43 +11,37 @@
 */
 
 use App\Http\Controllers\Tenant\AccountController;
-use App\Http\Controllers\Tenant\BranchController;
+use App\Http\Controllers\Tenant\BranchesController;
 use App\Http\Controllers\Tenant\CashierController;
 use App\Http\Controllers\Tenant\HomeController;
-use App\Http\Controllers\Tenant\ManagerController;
-use App\Http\Controllers\Tenant\OrderController;
-use App\Http\Controllers\Tenant\Settings\SettingsController;
-use App\Http\Controllers\Tenant\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::namespace("Tenant")
      ->middleware('tenant')
      ->domain('{subdomain}.' . config('app.url_base'))
      ->group(function () {
-         Route::get('', [HomeController::class, 'index']);
+         Route::get('/health-check', [HomeController::class, 'healthCheck']);
          Route::get('/login', [AccountController::class ,'login']);
          Route::post('/login', [AccountController::class ,'processLogin']);
 
-         Route::middleware('tenant.check.auth')->group(function () {
-             Route::get('/', [HomeController::class, 'index']);
+         Route::middleware('tenant.auth')->group(function () {
+             Route::get('', [HomeController::class, 'index']);
+             Route::post('/logout', [AccountController::class, 'logout']);
              Route::get('/user-data', [HomeController::class, 'getUserData']);
-             Route::post('/logout', 'AccountController@logout')->name('logout');
              Route::get('/form-options', [HomeController::class, 'getFormOptions']);
              Route::get('/salable-products', [HomeController::class, 'getSalableProducts']);
              Route::get('/purchasable-products', [HomeController::class, 'getPurchasableProducts']);
              Route::get('/get-item-by-barcode', [HomeController::class, 'getItemByBarcode']);
              Route::get('/countries', [HomeController::class, 'getCountries']);
 
-             ################################ TENANT ADMIN ##############################################
-             Route::prefix('admin')->middleware('ensure.admin')->group(function () {
-                 Route::get('', [HomeController::class, 'admin']);
-
-                 Route::prefix('api')->group(function () {
+             Route::prefix('v1')->group(function () {
+                 ################################ TENANT ADMIN ##############################################
+                 Route::middleware('tenant.admin')->group(function () {
                      Route::group(['prefix' => 'units'], function () {
-                         Route::get('', 'UnitsController@index')->name('units');
-                         Route::post('', 'UnitsController@store')->name('units.create');
-                         Route::put('', 'UnitsController@update')->name('units.update');
-                         Route::delete('', 'UnitsController@delete')->name('units.delete');
+                         Route::get('', 'UnitsController@index');
+                         Route::post('', 'UnitsController@store');
+                         Route::put('', 'UnitsController@update');
+                         Route::delete('', 'UnitsController@delete');
                      });
 
                      Route::group(['prefix' => 'suppliers'], function () {
@@ -73,12 +67,12 @@ Route::namespace("Tenant")
                      });
 
                      Route::group(['prefix' => 'branches'], function () {
-                         Route::get('', 'BranchesController@index')->name('branches');
-                         Route::post('', 'BranchesController@store')->name('branches.create');
-                         Route::put('', 'BranchesController@update')->name('branches.update');
-                         Route::delete('', 'BranchesController@delete')->name('branches.delete');
-                         Route::patch('lock', 'BranchesController@lock')->name('branches.lock');
-                         Route::patch('unlock', 'BranchesController@unlock')->name('branches.unlock');
+                         Route::get('', [BranchesController::class,'index']);
+                         Route::post('', [BranchesController::class,'store']);
+                         Route::put('{id}', [BranchesController::class,'update']);
+                         Route::delete('{id}', [BranchesController::class,'delete']);
+                         Route::patch('{id}/lock', [BranchesController::class,'lock']);
+                         Route::patch('{id}/unlock', [BranchesController::class,'unlock']);
                      });
 
                      Route::group(['prefix' => 'users'], function () {
@@ -95,35 +89,23 @@ Route::namespace("Tenant")
                          Route::patch('cancel-purchase-transaction', 'CashierController@cancelPurchaseTransaction')->name('pos.cancel_purchase');
                      });
                  });
+                 ################################ END TENANT ADMIN ##########################################
 
-                 Route::get('{any?}', [HomeController::class, 'admin'])->where('any', '.+');
-             });
-             ################################ END TENANT ADMIN ##########################################
-
-             ################################ TENANT MANAGER ############################################
-             Route::prefix('manager')->middleware('ensure.manager')->group(function () {
-                 Route::get('', [HomeController::class, 'manager']);
-
-                 Route::prefix('api')->group(function () {
+                 ################################ TENANT MANAGER ############################################
+                 Route::middleware('tenant.manager')->group(function () {
 
                  });
+                 ################################ END TENANT MANAGER ########################################
 
-                 Route::get('{any?}', [HomeController::class, 'manager'])->where('any', '.+');
-             });
-             ################################ END TENANT MANAGER ########################################
-
-             ################################ TENANT SHOP ##############################################
-             Route::prefix('pos')->middleware('ensure.cashier')->group(function () {
-                 Route::get('', [HomeController::class, 'pos']);
-
-                 Route::prefix('api')->group(function () {
+                 ################################ TENANT SHOP ##############################################
+                 Route::middleware('tenant.cashier')->group(function () {
                      Route::get('shop-info', [CashierController::class, 'getShopInfo']);
                      Route::post('complete-sale-transaction', [CashierController::class, 'completeSaleTransaction']);
                      Route::patch('cancel-sale-transaction', [CashierController::class, 'cancelSaleTransaction']);
                  });
-
-                 Route::get('{any?}', [HomeController::class, 'pos'])->where('any', '.+');
+                 ################################ END TENANT SHOP ##########################################
              });
-             ################################ END TENANT SHOP ##########################################
+
+             Route::get('{any?}', [HomeController::class, 'index'])->where('any', '.+');
          });
      });

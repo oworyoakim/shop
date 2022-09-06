@@ -60,4 +60,21 @@ class Admin extends Authenticatable
     {
         return !$this->active;
     }
+
+    public function getUserData()
+    {
+        $user = new \stdClass();
+        $user->id = $this->id;
+        $user->username = $this->username;
+        $user->email = $this->email;
+        $user->firstName = $this->first_name;
+        $user->lastName = $this->last_name;
+        $user->lastLogin = $this->last_login;
+        $user->avatar = $this->avatar;
+        $user->active = !!$this->active;
+        $user->permissions = $this->permissions;
+        $user->group = $this->group ?: '';
+
+        return $user;
+    }
 }

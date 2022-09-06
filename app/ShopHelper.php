@@ -43,6 +43,8 @@ class ShopHelper
             $tenant->seedSuppliers();
             // seed customers
             $tenant->seedCustomers();
+            // seed GLAs
+            $tenant->seedGeneralLedgerAccounts();
             // seed expense categories and subcategories
             $tenant->seedExpenseCategoriesAndSubCategories();
             // create tenant admin user
@@ -118,7 +120,7 @@ class ShopHelper
         $builder = ItemStock::query();
         $builder->where('status', Stock::STATUS_ACTIVE);
         $builder->where(function ($query) use ($barcode) {
-            $query->where('secondary_barcode', $barcode)->orWhere('barcode', $barcode);
+            $query->where('barcode', $barcode)->orWhere('secondary_barcode', $barcode);
         });
         return $builder->first();
     }

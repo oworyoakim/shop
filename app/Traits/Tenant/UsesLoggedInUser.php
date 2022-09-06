@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 
 trait UsesLoggedInUser
 {
+    /**
+     * @return bool
+     */
     protected function isLoggedIn()
     {
         return Auth::guard('tenant')->check();

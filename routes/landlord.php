@@ -11,6 +11,7 @@
 */
 
 use App\Http\Controllers\Landlord\AccountController;
+use App\Http\Controllers\Landlord\DashboardStatisticsController;
 use App\Http\Controllers\Landlord\TenantController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,17 +19,17 @@ use Illuminate\Support\Facades\Route;
 Route::namespace("Landlord")
      ->domain('admin.' . config('app.url_base'))
      ->group(function () {
-         Route::get('', [AccountController::class, 'index']);
+         Route::get('/health-check', [AccountController::class, 'health-check']);
          Route::get('/login', [AccountController::class, 'index']);
          Route::post('/login', [AccountController::class, 'processLogin']);
 
          Route::middleware('landlord')->group(function () {
              Route::get('/', [AccountController::class, 'index']);
+             Route::post('/logout', [AccountController::class, 'logout']);
+             Route::get('/user-data', [AccountController::class, 'getUserData']);
+             Route::get('/dashboard-statistics', [DashboardStatisticsController::class, 'index']);
 
              Route::prefix('api')->group(function () {
-
-                 Route::get('user_data', [AccountController::class, 'getUser']);
-
                  Route::prefix('tenants')->group(function () {
                      Route::get('', [TenantController::class, 'index']);
                      Route::post('', [TenantController::class, 'store']);

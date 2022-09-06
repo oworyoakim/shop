@@ -11,7 +11,6 @@ namespace App\Models\Tenant;
 use App\Models\Scopes\TenantScope;
 use App\Traits\PermissionsTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 
 /**
@@ -43,7 +42,6 @@ use Illuminate\Support\Carbon;
  */
 class User extends Authenticatable
 {
-    use Notifiable;
     use PermissionsTrait;
 
     protected $table = 'users';
@@ -93,18 +91,6 @@ class User extends Authenticatable
         self::TYPE_ACCOUNTANTS,
         self::TYPE_SUPERVISORS,
     ];
-
-    /**
-     * The "booting" method of the model.
-     *
-     * @return void
-     */
-    protected static function boot()
-    {
-        parent::boot();
-        static::addGlobalScope(new TenantScope);
-    }
-
 
 
     public function getFullNameAttribute()
@@ -347,6 +333,14 @@ class User extends Authenticatable
     public function isActive()
     {
         return !!$this->active;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isBlocked()
+    {
+        return !$this->active;
     }
 
     /**

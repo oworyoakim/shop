@@ -25,19 +25,30 @@ mix.webpackConfig(webpack => {
 
 
 // Landlord App
+mix.js('resources/js/landlord/app.js', 'public/js/landlord.js').vue({version: 2})
+    .sass('resources/js/landlord/sass/app.scss', 'public/css/landlord.css');
 
 
 // Tenant Admin App
+mix.js('resources/js/tenant/admin/app.js', 'public/js/admin.js').vue({version: 2})
+    .sass('resources/js/tenant/admin/sass/app.scss', 'public/css/admin.css');
 
 
-// Tenant Shop App
-mix.js('resources/js/app.js', 'public/js')
-    .vue({version: 2})
-    .sass('resources/sass/app.scss', 'public/css');
+// Tenant Manager App
+mix.js('resources/js/tenant/manager/app.js', 'public/js/manager.js').vue({version: 2})
+    .sass('resources/js/tenant/manager/sass/app.scss', 'public/css/manager.css');
+
+
+// Tenant Pos App
+mix.js('resources/js/tenant/pos/app.js', 'public/js/app.js').vue({version: 2})
+    .sass('resources/js/tenant/pos/sass/app.scss', 'public/css/app.css');
+
 
 
 
 // Auth App
+mix.js('resources/js/auth/app.js', 'public/js/auth.js').vue({version: 2})
+    .sass('resources/js/auth/sass/app.scss', 'public/css/auth.css');
 
 
 

@@ -7,31 +7,37 @@ use App\Models\Tenant\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 
 class AccountController extends TenantBaseController
 {
     public function login()
     {
-        if (!Auth::guard('tenant')->check())
+        if (!$this->isLoggedIn())
         {
-            return view('tenant.login');
+            return view('auth.login');
         }
-        $user = Auth::guard('tenant')->user();
-        if ($user->isAdmin() || $user->isSupervisor() || $user->isAccountant())
+
+        $user = $this->getUser();
+
+        if ($user->isCashier())
         {
-            return redirect('admin/dashboard');
+            return redirect('pos');
         }
+
         if ($user->isManager())
         {
             return redirect('manager/dashboard');
         }
-        return redirect('pos');
+
+        return redirect('admin/dashboard');
     }
 
     public function processLogin(Request $request)
     {
-        try{
+        try
+        {
             $credentials = [
                 "username" => $request->get('loginName'),
                 "password" => $request->get('loginPassword'),
@@ -49,39 +55,46 @@ class AccountController extends TenantBaseController
                 return response()->json('Your account has been blocked by admin', Response::HTTP_BAD_REQUEST);
             }
 
-            if ($user->login_token && $user->isCashier())
+            if ($user->isCashier() && !empty($user->login_token))
             {
                 return response()->json('You are already logged in. Contact your manager for help!', Response::HTTP_BAD_REQUEST);
             }
 
-            $loggedIn = Auth::guard('tenant')->attempt($credentials);
-            if(!$loggedIn) {
-                return response()->json('Invalid Credentials!', Response::HTTP_FORBIDDEN);
+            if (!Hash::check($credentials['password'], $user->password))
+            {
+                return response()->json('Wrong username or password', Response::HTTP_FORBIDDEN);
             }
-            $new_session_id  = Session::getId(); //get new session ID after user sign in
-            if(!empty($user->login_token)){
+
+            Auth::guard('tenant')->login($user);
+            $new_session_id = Session::getId(); //get new session ID after user sign in
+            if (!empty($user->login_token))
+            {
                 Session::getHandler()->destroy($user->login_token); // destroy any previous logins
             }
             $user->update(['login_token' => $new_session_id]);
             //get intended URL from session
             $redirectUrl = $request->session()->pull('url.intended');
+            //dd($redirectUrl);
             return response()->json([
                 'message' => "Login Successful!",
                 'url' => $redirectUrl
             ]);
-        }catch (\Throwable $ex){
+        } catch (\Throwable $ex)
+        {
             return $this->handleJsonRequestException("TENANT_LOGIN_ERROR", $ex);
         }
     }
 
     public function logout(Request $request)
     {
-        try {
+        try
+        {
             $user = Auth::guard('tenant')->user();
             $user->update(['login_token' => null]);
             Auth::guard('tenant')->logout();
             return response()->json('Logged Out!');
-        }catch (\Throwable $ex) {
+        } catch (\Throwable $ex)
+        {
             return $this->handleJsonRequestException("TENANT_LOGOUT_ERROR", $ex);
         }
     }

@@ -1,32 +1,56 @@
-import Vue from  'vue';
-import axios from 'axios';
+/**
+ * First we will load Vue. It is a great starting point when
+ * building robust, powerful web applications using Vue and Laravel.
+ */
+import Vue from 'vue';
+window.Vue = Vue;
+
 import moment from "moment";
 import numeral from "numeral";
-window.$ = window.jQuery = require('jquery');
-window.Popper = require('popper.js').default;
-require('bootstrap');
-window._ = Vue.prototype.$lodash = require('lodash');
-window.moment = Vue.prototype.$moment = moment;
-window.numeral = Vue.prototype.$numeral = numeral;
 
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-axios.defaults.headers.common['Accept'] = 'application/json';
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-
-let url = document.head.querySelector('meta[name="base-url"]');
-axios.defaults.baseURL = url.content;
-
-export const baseUrl = url.content;
-
-let token = document.head.querySelector('meta[name="csrf-token"]');
-
-if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
-} else {
-    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
+/**
+ * We'll load jQuery, Bootstrap jQuery plugin, and all of this project's JavaScript dependencies which provides support
+ * for JavaScript based Bootstrap features such as modals and tabs.
+ */
+try {
+    window._ = require('lodash');
+    window.Popper = require('admin-lte/plugins/popper/popper.min.js');
+    // jQuery
+    window.$ = window.jQuery = Vue.prototype.$jquery = require('admin-lte/plugins/jquery/jquery.min');
+    // Bootstrap 4.6
+    require('admin-lte/plugins/bootstrap/js/bootstrap.bundle.min');
+    // AdminLTE App
+    require('admin-lte/dist/js/adminlte.min');
+    Vue.prototype.$moment = moment;
+    window.numeral = Vue.prototype.$numeral = numeral;
+} catch (error) {
+    console.error(error);
 }
 
-window.axios = Vue.prototype.$http = axios;
-window.swal = window.sweetAlert = require('sweetalert2');
+/**
+ * Next we will register global Vue Mixins accessible from any Vue component.
+ */
+Vue.mixin({
+    methods: {
+        deepClone(object) {
+            //return JSON.parse(JSON.stringify(object));
+            return _.cloneDeep(object);
+        },
+        isEqual(object1, object2) {
+            return _.isEqual(object1, object2);
+        },
+    },
+});
 
+/**
+ * Next we will register global Vue Filters accessible from any Vue component.
+ */
+Vue.filter('separator', (amount) => {
+    if(!!!amount){
+        return '';
+    }
+    return numeral(amount).format('0,0');
+});
+Vue.filter('percentage', (value) => {
+    return numeral(value).format('0.[00]%');
+});

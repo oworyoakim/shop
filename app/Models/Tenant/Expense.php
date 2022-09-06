@@ -56,6 +56,10 @@ class Expense extends Model
         static::addGlobalScope(new TenantScope);
     }
 
+    public function journal_entry() {
+        return $this->morphOne(JournalEntry::class, 'transactable');
+    }
+
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);

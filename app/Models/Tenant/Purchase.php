@@ -63,6 +63,10 @@ class Purchase extends Model
         static::addGlobalScope(new TenantScope);
     }
 
+    public function journal_entry() {
+        return $this->morphOne(JournalEntry::class, 'transactable');
+    }
+
     public function scopeCanceled(Builder $query)
     {
         return $query->where('status', self::STATUS_CANCELED);

@@ -3,17 +3,14 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\TenantBaseController;
-use App\Models\Branch;
-use App\Models\User;
-use Cartalyst\Sentinel\Laravel\Facades\Sentinel;
-use Exception;
+use App\Models\Tenant\Branch;
+use App\Models\Tenant\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use stdClass;
 
 class BranchesController extends TenantBaseController
 {
@@ -21,41 +18,20 @@ class BranchesController extends TenantBaseController
     {
         try
         {
-            $branches = Branch::all()->transform(function (Branch $item) {
-                $branch = new stdClass();
-                $branch->id = $item->id;
-                $branch->name = $item->name;
-                $branch->phone = $item->phone;
-                $branch->email = $item->email;
-                $branch->country = $item->country;
-                $branch->city = $item->city;
-                $branch->address = $item->address;
-                $branch->balance = $item->getBalance();
+            $loggedInUser = $this->getUser();
 
-                $branch->manager = null;
-
-                $manager = $item->manager();
-                if($manager){
-                    $branch->manager = new stdClass();
-                    $branch->manager->id = $manager->id;
-                    $branch->manager->firstName = $manager->first_name;
-                    $branch->manager->lastName = $manager->last_name;
-                    $branch->manager->fullName = $manager->fullName();
-                    $branch->manager->email = $manager->email;
-                    $branch->manager->balance = $manager->getBalance();
-                }
-
-                $branch->canBeEdited = Sentinel::hasAnyAccess(['branches.update']);
-                $branch->canBeDeleted = Sentinel::hasAnyAccess(['branches.delete']);
-                $branch->canBeLocked = $item->isActive() && Sentinel::hasAnyAccess(['branches.lock']);
-                $branch->canBeUnlocked = !$item->isActive() && Sentinel::hasAnyAccess(['branches.unlock']);
+            $branches = Branch::all()->map(function (Branch $item) use ($loggedInUser) {
+                $branch = $item->getDetails();
+                $branch->canBeEdited = $loggedInUser->hasAnyAccess(['tenant.branches.update']);
+                $branch->canBeDeleted = $loggedInUser->hasAnyAccess(['tenant.branches.delete']);
+                $branch->canBeLocked = $item->isActive() && $loggedInUser->hasAnyAccess(['tenant.branches.lock']);
+                $branch->canBeUnlocked = !$item->isActive() && $loggedInUser->hasAnyAccess(['tenant.branches.unlock']);
                 return $branch;
             });
             return response()->json($branches);
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("GET_BRANCHES: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('GET_BRANCHES', $ex);
         }
     }
 
@@ -63,14 +39,16 @@ class BranchesController extends TenantBaseController
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['branches.create']))
+            $loggedInUser = $this->getUser();
+            if (!$loggedInUser->hasAnyAccess(['tenant.branches.create']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json("Permission Denied!", Response::HTTP_FORBIDDEN);
             }
-            $user = Sentinel::getUser();
+
             $validator = Validator::make($request->all(), [
-                'name' => 'required|unique:branches',
+                'name' => 'required',
             ]);
+
             if ($validator->fails())
             {
                 $errors = "";
@@ -78,7 +56,7 @@ class BranchesController extends TenantBaseController
                 {
                     $errors .= "<p class='text-small'>" . ucfirst($key) . ": " . implode('<br/>', $messages) . "</p>";
                 }
-                throw new Exception("Validation Error: {$errors}");
+                return response()->json("Validation Error: {$errors}", Response::HTTP_BAD_REQUEST);
             }
             $name = $request->get('name');
             $phone = $request->get('phone');
@@ -87,41 +65,39 @@ class BranchesController extends TenantBaseController
             $city = $request->get('city');
             $address = $request->get('address');
 
-            settings()->beginTransaction();
-
-            Branch::create([
+            $branch = Branch::query()->create([
                 'name' => $name,
                 'phone' => $phone,
                 'email' => $email,
                 'country' => $country,
                 'city' => $city,
                 'address' => $address,
-                'user_id' => $user->getUserId(),
+                'user_id' => $loggedInUser->id,
+                'tenant_id' => $loggedInUser->tenant_id,
             ]);
-            settings()->commitTransaction();
             return response()->json('Branch Created!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("CREATE_BRANCH: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('CREATE_BRANCH', $ex);
         }
     }
 
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['branches.update']))
+            $loggedInUser = $this->getUser();
+
+            if (!$loggedInUser->hasAnyAccess(['tenant.branches.update']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json("Permission Denied!", Response::HTTP_FORBIDDEN);
             }
-            $branchId = $request->get('id');
-            $branch = Branch::query()->find($branchId);
+
+            $branch = Branch::query()->find($id);
 
             if (!$branch)
             {
-                throw new Exception("Branch not found!");
+                return response()->json("Branch not found!", Response::HTTP_FORBIDDEN);
             }
 
             $name = $request->get('name');
@@ -131,22 +107,21 @@ class BranchesController extends TenantBaseController
             $city = $request->get('city');
             $address = $request->get('address');
 
-            if ($name != $branch->name)
+            $validator = Validator::make($request->all(), [
+                'name' => 'required',
+            ]);
+
+            if ($validator->fails())
             {
-                $validator = Validator::make($request->all(), [
-                    'name' => 'required|unique:branches',
-                ]);
-                if ($validator->fails())
+                $errors = "";
+                foreach ($validator->errors()->messages() as $key => $messages)
                 {
-                    $errors = "";
-                    foreach ($validator->errors()->messages() as $key => $messages)
-                    {
-                        $errors .= "<p class='text-small'>" . ucfirst($key) . ": " . implode('<br/>', $messages) . "</p>";
-                    }
-                    throw new Exception("Validation Error: {$errors}");
+                    $errors .= "<p class='text-small'>" . ucfirst($key) . ": " . implode('<br/>', $messages) . "</p>";
                 }
-                $branch->name = $name;
+                return response()->json("Validation Error: {$errors}", Response::HTTP_BAD_REQUEST);
             }
+
+            $branch->name = $name;
             $branch->phone = $phone;
             $branch->email = $email;
             $branch->country = $country;
@@ -154,96 +129,85 @@ class BranchesController extends TenantBaseController
             $branch->address = $address;
             $branch->save();
             return response()->json('Branch Updated!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("UPDATE_BRANCH: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('UPDATE_BRANCH', $ex);
         }
     }
 
-    public function delete(Request $request)
+    public function delete(Request $request, $id)
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['branches.delete']))
+            $loggedInUser = $this->getUser();
+
+            if (!$loggedInUser->hasAnyAccess(['tenant.branches.delete']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json("Permission Denied!", Response::HTTP_FORBIDDEN);
             }
 
-            $branchId = $request->get('branch_id');
-            $branch = Branch::query()->find($branchId);
+            $branch = Branch::query()->find($id);
 
             if (!$branch)
             {
-                throw new Exception("Branch not found!");
+                return response()->json("Branch not found!", Response::HTTP_FORBIDDEN);
             }
-            settings()->beginTransaction();
             $branch->delete();
-            settings()->commitTransaction();
             return response()->json('Branch Deleted!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("DELETE_BRANCH: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('DELETE_BRANCH', $ex);
         }
     }
 
-    public function lock(Request $request)
+    public function lock(Request $request, $id)
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['branches.lock']))
+            $loggedInUser = $this->getUser();
+
+            if (!$loggedInUser->hasAnyAccess(['tenant.branches.lock']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json("Permission Denied!", Response::HTTP_FORBIDDEN);
             }
 
-            $branchId = $request->get('branch_id');
-            $branch = Branch::query()->find($branchId);
+            $branch = Branch::query()->find($id);
 
             if (!$branch)
             {
-                throw new Exception("Branch not found!");
+                return response()->json("Branch not found!", Response::HTTP_FORBIDDEN);
             }
-            settings()->beginTransaction();
-            $branch->active = false;
-            $branch->save();
-            settings()->commitTransaction();
+            $branch->update(['active' => false]);
             return response()->json('Branch Locked!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("LOCK_BRANCH: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('LOCK_BRANCH', $ex);
         }
     }
 
-    public function unlock(Request $request)
+    public function unlock(Request $request, $id)
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['branches.unlock']))
+            $loggedInUser = $this->getUser();
+
+            if (!$loggedInUser->hasAnyAccess(['tenant.branches.unlock']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json("Permission Denied!", Response::HTTP_FORBIDDEN);
             }
 
-            $branchId = $request->get('branch_id');
-            $branch = Branch::query()->find($branchId);
+            $branch = Branch::query()->find($id);
 
             if (!$branch)
             {
-                throw new Exception("Branch not found!");
+                return response()->json("Branch not found!", Response::HTTP_FORBIDDEN);
             }
-            settings()->beginTransaction();
-            $branch->active = true;
-            $branch->save();
-            settings()->commitTransaction();
+
+            $branch->update(['active' => true]);
             return response()->json('Branch Unlocked!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("UNLOCK_BRANCH: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('UnLOCK_BRANCH', $ex);
         }
     }
 }
