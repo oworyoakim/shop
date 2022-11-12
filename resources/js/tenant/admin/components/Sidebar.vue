@@ -29,24 +29,6 @@
                             </p>
                         </router-link>
                     </li>
-                    <li class="nav-item" v-if="$store.getters.HAS_ANY_ACCESS(['tenant.categories','tenant.categories.create','tenant.categories.update', 'tenant.categories.delete'])">
-                        <router-link :to="{name: 'Categories'}" class="nav-link" active-class="active">
-                            <i class="fa fa-tree"></i>
-                            <p>
-                                Categories
-                                <i class="right fas fa-angle-left"></i>
-                            </p>
-                        </router-link>
-                    </li>
-                    <li class="nav-item" v-if="$store.getters.HAS_ANY_ACCESS(['tenant.items','tenant.items.create','tenant.items.update', 'tenant.items.delete'])">
-                        <router-link :to="{name: 'Items'}" class="nav-link" active-class="active">
-                            <i class="fa fa-shopping-cart"></i>
-                            <p>
-                                Items
-                                <i class="right fas fa-angle-left"></i>
-                            </p>
-                        </router-link>
-                    </li>
                     <li class="nav-item" v-if="$store.getters.HAS_ANY_ACCESS(['tenant.branches','tenant.branches.create','tenant.branches.update', 'tenant.branches.delete'])">
                         <router-link :to="{name: 'Shops'}" class="nav-link" active-class="active">
                             <i class="fa fa-building"></i>
@@ -56,29 +38,11 @@
                             </p>
                         </router-link>
                     </li>
-                    <li class="nav-item" v-if="$store.getters.HAS_ANY_ACCESS(['tenant.purchases','tenant.purchases.create','tenant.purchases.update', 'tenant.purchases.delete', 'tenant.purchases.cancel', 'tenant.purchases.refund', 'tenant.purchases.block', 'tenant.purchases.payables'])">
-                        <router-link :to="{name: 'Purchases'}" class="nav-link" active-class="active">
-                            <i class="fa fa-shopping-basket"></i>
-                            <p>
-                                Purchases
-                                <i class="right fas fa-angle-left"></i>
-                            </p>
-                        </router-link>
-                    </li>
-                    <li class="nav-item" v-if="$store.getters.HAS_ANY_ACCESS(['tenant.stocks','tenant.stocks.view','tenant.stocks.adjust', 'tenant.stocks.transfer'])">
-                        <router-link :to="{name: 'Stocks'}" class="nav-link" active-class="active">
+                    <li class="nav-item">
+                        <router-link :to="{name: 'Inventory'}" class="nav-link" active-class="active">
                             <i class="fa fa-shopping-bag"></i>
                             <p>
-                                Stocks
-                                <i class="right fas fa-angle-left"></i>
-                            </p>
-                        </router-link>
-                    </li>
-                    <li class="nav-item" v-if="$store.getters.HAS_ANY_ACCESS(['tenant.suppliers','tenant.suppliers.create','tenant.suppliers.update', 'tenant.suppliers.delete'])">
-                        <router-link :to="{name: 'Suppliers'}" class="nav-link" active-class="active">
-                            <i class="fa fa-truck"></i>
-                            <p>
-                                Suppliers
+                                Inventory
                                 <i class="right fas fa-angle-left"></i>
                             </p>
                         </router-link>

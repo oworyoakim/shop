@@ -85,9 +85,9 @@ class Sale extends Model
         return $this->hasOne(SaleReturn::class, 'sale_id');
     }
 
-    public function receivable()
+    public function payments()
     {
-        return $this->hasOne(SaleReceivable::class, 'sale_id');
+        return $this->hasOne(SalePayment::class, 'sale_id');
     }
 
     public function paidAmount()

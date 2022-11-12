@@ -65,9 +65,9 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'landlord' => \App\Http\Middleware\Landlord\EnsureAuthenticated::class,
         'tenant' => Middleware\Tenant\TenantConnection::class,
-        'tenant.auth' => \App\Http\Middleware\Tenant\EnsureAuthenticated::class,
+        'tenant.unblocked' => \App\Http\Middleware\Tenant\EnsureNotBlocked::class,
         'tenant.admin' => \App\Http\Middleware\Tenant\EnsureAdmin::class,
         'tenant.manager' => \App\Http\Middleware\Tenant\EnsureManager::class,
-        'tenant.cashier' => \App\Http\Middleware\Tenant\EnsureManager::class,
+        'tenant.cashier' => \App\Http\Middleware\Tenant\EnsureCashier::class,
     ];
 }

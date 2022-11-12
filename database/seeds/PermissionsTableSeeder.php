@@ -14,7 +14,6 @@ class PermissionsTableSeeder extends Seeder
      */
     public function run()
     {
-        Permission::query()->truncate();
         $this->seedLandlordPermissions();
         $this->seedTenantPermissions();
     }

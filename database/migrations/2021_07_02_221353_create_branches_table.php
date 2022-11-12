@@ -17,6 +17,7 @@ class CreateBranchesTable extends Migration
         Schema::create($this->table, function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id');
+            $table->unsignedBigInteger('general_ledger_account_id');
             $table->string('name');
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
@@ -28,6 +29,18 @@ class CreateBranchesTable extends Migration
             $table->boolean('active')->default(true);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreign('general_ledger_account_id')
+                  ->references('id')
+                  ->on('general_ledger_accounts')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

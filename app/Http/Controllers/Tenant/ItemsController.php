@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\TenantBaseController;
 use App\Models\Tenant\Item;
-use Exception;
+use App\ShopHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use stdClass;
 use DNS1D;
 
 class ItemsController extends TenantBaseController
@@ -20,46 +18,22 @@ class ItemsController extends TenantBaseController
     {
         try
         {
-            $user = $this->getUser();
-            $products = Item::all()->transform(function (Item $item) {
-                $product = new stdClass();
-                $product->id = $item->id;
-                $product->barcode = $item->barcode;
-                $product->title = $item->title;
-                $product->description = $item->description;
-                $product->margin = $item->margin;
-                $product->account = $item->account;
-                $product->avatar = $item->avatar;
-                $product->categoryId = $item->category_id;
-                $product->category = null;
-                $category = $item->category;
-                if ($category)
-                {
-                    $product->category = new stdClass();
-                    $product->category->id = $category->id;
-                    $product->category->title = $category->title;
-                    $product->category->description = $category->description;
-                }
-                $product->unitId = $item->unit_id;
-                $product->unit = null;
-                $unit = $item->unit;
-                if ($unit)
-                {
-                    $product->unit = new stdClass();
-                    $product->unit->id = $unit->id;
-                    $product->unit->title = $unit->title;
-                    $product->unit->description = $unit->description;
-                }
-                $product->canBeEdited = Sentinel::hasAnyAccess(['items.update']);
-                $product->canBeDeleted = Sentinel::hasAnyAccess(['items.delete']);
-                $product->canPrintBarcode = Sentinel::hasAnyAccess(['items.print_barcode']);
-                return $product;
+            $loggedInUser = $this->getUser();
+            $products = Item::query()->paginate(10);
+
+            $items = $products->getCollection();
+            $modifiedItems = $items->map(function ($item) use ($loggedInUser){
+                $item->canBeEdited = $loggedInUser->hasAnyAccess(['tenant.items.update']);
+                $item->canBeDeleted = $loggedInUser->hasAnyAccess(['tenant.items.delete']);
+                $item->canPrintBarcode = $loggedInUser->hasAnyAccess(['tenant.items.print_barcode']);
+                return $item;
             });
+            $products->setCollection($modifiedItems);
+
             return response()->json($products);
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("GET_ITEMS: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("GET_ITEMS", $ex);
         }
     }
 
@@ -67,25 +41,32 @@ class ItemsController extends TenantBaseController
     {
         try
         {
-            $user = $this->getUser();
+            $loggedInUser = $this->getUser();
 
-            if (!$user->hasAnyAccess(['items.create']))
+            if (!$loggedInUser->hasAnyAccess(['tenant.items.create']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json([
+                    'message' => "Permission Denied!"
+                ], Response::HTTP_FORBIDDEN);
             }
-            $user = Sentinel::getUser();
+
             $validator = Validator::make($request->all(), [
-                'title' => 'required|unique:items',
+                'title' => 'required',
+                'unit_id' => 'required|exists:units,id',
+                'category_id' => 'required|exists:categories,id',
+                'account' => 'required',
             ]);
+
             if ($validator->fails())
             {
-                $errors = "";
-                foreach ($validator->errors()->messages() as $key => $messages)
-                {
-                    $errors .= "<p class='text-small'>" . ucfirst($key) . ": " . implode('<br/>', $messages) . "</p>";
-                }
-                throw new Exception("Validation Error: {$errors}");
+                return response()->json([
+                    "message" => "Validation Errors",
+                    "errors" => $validator->errors()->messages(),
+                ], Response::HTTP_BAD_REQUEST);
             }
+
+            $settings = ShopHelper::getTenantSettings($loggedInUser->tenant_id);
+
             // check for margin override
             $account = $request->get('account');
             $margin = 0.00;
@@ -94,12 +75,12 @@ class ItemsController extends TenantBaseController
                 $margin = $request->get('margin');
                 if (!$margin)
                 {
-                    if (settings()->get('enable_global_margin'))
+                    if ($settings->enable_margin)
                     {
-                        $margin = floatval(settings()->get('profit_margin'));
+                        $margin = floatval($settings->profit_margin);
                     } else
                     {
-                        $margin = 15.00; // default is 15%
+                        $margin = 5.00; // default is 5%
                     }
                 }
             }
@@ -108,59 +89,70 @@ class ItemsController extends TenantBaseController
             if (!$barcode)
             {
                 // generate unique barcode
-                $barcode = Item::generateBarcode($user);
-            } elseif (Item::exists($barcode))
+                $timestamp = Carbon::now()->getTimestamp();
+                $barcode = "{$loggedInUser->id}{$timestamp}";
+            } elseif (Item::query()->where('barcode', $barcode)->orWhere('secondary_barcode', $barcode)->exists())
             {
-                throw new Exception("The barcode {$barcode} already exists. Enter a new barcode or leave it blank to be assigned one automatically!");
+                return response()->json([
+                    "message" => "The barcode {$barcode} already exists. Enter a new barcode or leave it blank to be assigned one automatically!",
+                    "errors" => $validator->errors()->messages(),
+                ], Response::HTTP_BAD_REQUEST);
             }
             $title = $request->get('title');
             $description = $request->get('description');
-            $unitId = $request->get('unitId');
-            $categoryId = $request->get('categoryId');
-
-            settings()->beginTransaction();
+            $unit_id = $request->get('unit_id');
+            $category_id = $request->get('category_id');
 
             Item::create([
                 'barcode' => $barcode,
                 'title' => $title,
-                'slug' => Str::slug($title),
                 'account' => $account,
                 'margin' => $margin,
                 'description' => $description,
-                'category_id' => $categoryId,
-                'unit_id' => $unitId,
-                'user_id' => $user->getUserId(),
+                'category_id' => $category_id,
+                'unit_id' => $unit_id,
+                'user_id' => $loggedInUser->id,
+                'tenant_id' => $loggedInUser->tenant_id,
             ]);
-            settings()->commitTransaction();
             return response()->json('Item Created!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("CREATE_ITEM: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("CREATE_ITEM", $ex);
         }
     }
 
-    public function update(Request $request)
+    public function update(Request $request, Item $item)
     {
         try
         {
-            $user = $this->getUser();
+            $loggedInUser = $this->getUser();
 
-            if (!$user->hasAnyAccess(['items.update']))
+            if (!$loggedInUser->hasAnyAccess(['tenant.items.update']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json([
+                    'message' => "Permission Denied!"
+                ], Response::HTTP_FORBIDDEN);
             }
 
-            $unitId = $request->get('unitId');
-            $categoryId = $request->get('categoryId');
-            $itemId = $request->get('id');
-            $item = Item::query()->find($itemId);
+            $validator = Validator::make($request->all(), [
+                'title' => 'required',
+                'unit_id' => 'required|exists:units,id',
+                'category_id' => 'required|exists:categories,id',
+                'account' => 'required',
+            ]);
 
-            if (!$item)
+            if ($validator->fails())
             {
-                throw new Exception("Item not found!");
+                return response()->json([
+                    "message" => "Validation Errors",
+                    "errors" => $validator->errors()->messages(),
+                ], Response::HTTP_BAD_REQUEST);
             }
+
+            $unit_id = $request->get('unit_id');
+            $category_id = $request->get('category_id');
+
+            $settings = ShopHelper::getTenantSettings($loggedInUser->tenant_id);
 
             $title = $request->get('title');
             $description = $request->get('description');
@@ -172,71 +164,48 @@ class ItemsController extends TenantBaseController
                 $margin = $request->get('margin');
                 if (!$margin)
                 {
-                    if (settings()->get('enable_global_margin'))
+                    if ($settings->enable_margin)
                     {
-                        $margin = floatval(settings()->get('profit_margin'));
+                        $margin = floatval($settings->profit_margin);
                     } else
                     {
-                        $margin = 15.00; // default is 15%
+                        $margin = 5.00; // default is 5%
                     }
                 }
             }
 
-            if ($title != $item->title)
-            {
-                $validator = Validator::make($request->all(), [
-                    'title' => 'required|unique:items',
-                ]);
-                if ($validator->fails())
-                {
-                    $errors = "";
-                    foreach ($validator->errors()->messages() as $key => $messages)
-                    {
-                        $errors .= "<p class='text-small'>" . ucfirst($key) . ": " . implode('<br/>', $messages) . "</p>";
-                    }
-                    throw new Exception("Validation Error: {$errors}");
-                }
-                $item->title = $title;
-                $item->slug = Str::slug($title);
-            }
-            $item->description = $description;
-            $item->account = $account;
-            $item->save();
+            $item->update([
+                'title' => $title,
+                'account' => $account,
+                'margin' => $margin,
+                'description' => $description,
+                'category_id' => $category_id,
+                'unit_id' => $unit_id,
+            ]);
             return response()->json('Item Updated!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("UPDATE_ITEM: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("UPDATE_ITEM", $ex);
         }
     }
 
-    public function delete(Request $request)
+    public function delete(Request $request, Item $item)
     {
         try
         {
             $user = $this->getUser();
 
-            if (!$user->hasAnyAccess(['items.delete']))
+            if (!$user->hasAnyAccess(['tenant.items.delete']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json([
+                    'message' => "Permission Denied!"
+                ], Response::HTTP_FORBIDDEN);
             }
-
-            $itemId = $request->get('item_id');
-            $item = Item::query()->find($itemId);
-
-            if (!$item)
-            {
-                throw new Exception("Item not found!");
-            }
-            settings()->beginTransaction();
             $item->delete();
-            settings()->commitTransaction();
             return response()->json('Item Deleted!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("DELETE_ITEM: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("DELETE_ITEM", $ex);
         }
     }
 
@@ -271,52 +240,10 @@ class ItemsController extends TenantBaseController
             }
             $chunks = array_chunk($ranges, 4);
             return view('barcode', compact('barcode', 'barcodeImg', 'chunks', 'companyLogo', 'companyName'));
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
             Log::error("PRINT_ITEM_BARCODE: {$ex->getMessage()}");
             return redirect()->route('home');
-        }
-    }
-
-    public function getSalableItems(Request $request)
-    {
-        try
-        {
-            $branchId = $request->get('branch_id');
-            $branch = Branch::query()->find($branchId);
-            if ($branch)
-            {
-                $items = $this->repository->getSalableItems($branch->id);
-            } else
-            {
-                $items = $this->repository->getSalableItems();
-            }
-            return response()->json($items);
-        } catch (Exception $ex)
-        {
-            Log::error("GET_SALABLE_ITEMS: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
-        }
-    }
-
-    public function getPurchasableItems(Request $request)
-    {
-        try
-        {
-            $branchId = $request->get('branch_id');
-            $branch = Branch::query()->find($branchId);
-            if ($branch)
-            {
-                $items = $this->repository->getPurchasableItems($branch->id);
-            } else
-            {
-                $items = $this->repository->getPurchasableItems();
-            }
-            return response()->json($items);
-        } catch (Exception $ex)
-        {
-            Log::error("GET_SALABLE_ITEMS: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
         }
     }
 
@@ -334,7 +261,7 @@ class ItemsController extends TenantBaseController
                 $stocks = $this->repository->getStocks();
             }
             return response()->json($stocks);
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
             Log::error("GET_STOCKS: {$ex->getMessage()}");
             return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);

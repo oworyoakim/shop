@@ -2,171 +2,189 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Events\PurchaseCompleted;
 use App\Http\Controllers\TenantBaseController;
+use App\Models\Tenant\GeneralLedgerAccount;
+use App\Models\Tenant\JournalEntry;
+use App\Models\Tenant\LineItem;
+use App\Models\Tenant\Purchase;
+use App\Models\Tenant\PurchaseItem;
+use App\ShopHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
-use Exception;
+use Illuminate\Support\Facades\DB;
 
 class StorePurchaseController extends TenantBaseController
 {
-    public function index(Request $request)
+    public function store(Request $request)
     {
         try
         {
+            $loggedInUser = $this->getUser();
             //dd($request->all());
-            if (!Sentinel::hasAnyAccess(['purchases.create']))
+            if (!$loggedInUser->hasAnyAccess(['tenant.purchases.create']))
             {
-                throw new Exception('Permission Denied!');
-            }
-            $user = Sentinel::getUser();
-            $branchId = $request->get('branchId');
-            $supplierId = $request->get('supplierId');
-            $grossAmount = intval($request->get('grossAmount'));
-            $netAmount = intval($request->get('netAmount'));
-            $paidAmount = intval($request->get('paidAmount'));
-            $dueDate = $request->get('dueDate');
-            $transactDate = $request->get('paymentDate');
-            $discountAmount = intval($request->get('discount'));
-            $taxAmount = intval($request->get('taxAmount'));
-            $taxRate = floatval($request->get('taxRate'));
-            $items = $request->get('items');
-
-            $dueAmount = $netAmount - $paidAmount;
-
-            if ($dueAmount == $netAmount)
-            {
-                $paymentStatus = 'pending';
-            } elseif ($dueAmount == 0)
-            {
-                $paymentStatus = 'settled';
-            } else
-            {
-                $paymentStatus = 'partial';
+                return response()->json([
+                    'message' => 'Permission Denied!'
+                ], Response::HTTP_FORBIDDEN);
             }
 
-            $discountRate = 0;
-            if ($discountAmount > 0)
-            {
-                $discountRate = round(($discountAmount * 100 / $grossAmount), 2);
+            $purchaseGLA = GeneralLedgerAccount::query()->where([
+                'name' => GeneralLedgerAccount::PURCHASES_GLA_NAME,
+                'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            ])->first();
+
+            if(!$purchaseGLA) {
+                return response()->json([
+                    'message' => 'Account not configured for purchases. No purchases ledger account'
+                ], Response::HTTP_FORBIDDEN);
             }
 
-            $status = 'completed';
-            if ($paymentStatus == 'pending')
-            {
-                $status = 'pending';
-            }
+            DB::transaction(function () use ($request, $loggedInUser, $purchaseGLA){
+                $branchId = $request->get('branch_id');
+                $supplierId = $request->get('supplier_id');
+                $grossAmount = intval($request->get('amount'));
+                $paidAmount = intval($request->get('paid'));
+                $items = $request->get('items');
+                $taxRate = floatval($request->get('vat'));
 
-            settings()->beginTransaction();
-            // create transaction
-            $transcode = Purchase::generateTransactionCode($user);
-            $purchase = Purchase::query()->create([
-                'transcode' => $transcode,
-                'transact_date' => Carbon::parse($transactDate),
-                'supplier_id' => $supplierId,
-                'branch_id' => $branchId,
-                'gross_amount' => $grossAmount,
-                'vat_rate' => $taxRate,
-                'vat_amount' => $taxAmount,
-                'discount_rate' => $discountRate,
-                'discount_amount' => $discountAmount,
-                'net_amount' => $netAmount,
-                'status' => $status,
-                'payment_status' => $paymentStatus,
-                'user_id' => $user->getUserId(),
-            ]);
+                $taxAmount = ceil($grossAmount * $taxRate / 100);
 
-            // attach Items
-            foreach ($items as $barcode => $product)
-            {
-                $quantity = $product['quantity'];
-                $itemId = $product['id'];
-                $costPrice = $product['price'];
-                $itemGrossAmount = $quantity * $costPrice;
-                $itemDiscountRate = $product['discount'];
-                $itemDiscountAmount = toNearestHundredsLower(round(($itemDiscountRate * $itemGrossAmount / 100), 2));
-                $itemNetAmount = $itemGrossAmount - $itemDiscountAmount;
+                $netAmount = $grossAmount - $taxAmount;
 
-                $item = Item::query()->find($itemId);
-                if (!$item)
+                $dueAmount = $grossAmount - $paidAmount;
+
+                if ($dueAmount == $netAmount)
                 {
-                    throw new Exception("Invalid Item with barcode:  {$barcode}");
-                }
-
-                // attach item
-                PurchaseItem::query()->create([
-                    'purchase_id' => $purchase->id,
-                    'item_id' => $item->id,
-                    'cost_price' => $costPrice,
-                    'quantity' => $quantity,
-                    'gross_amount' => $itemGrossAmount,
-                    'discount_rate' => $itemDiscountRate,
-                    'discount_amount' => $itemDiscountAmount,
-                    'net_amount' => $itemNetAmount,
-                ]);
-
-                // Update Stocks
-                // compute sell price if this item is not for purchases only
-                $sellPrice = 0;
-                if ($item->account != Item::ACCOUNT_PURCHASES_ONLY)
+                    $paymentStatus = 'pending';
+                } elseif ($dueAmount == 0)
                 {
-                    $sellPrice = toNearestHundredsUpper(round((($item->margin + 100) * $costPrice) / 100, 2));
-                }
-
-                $stock = Stock::query()->where([
-                    'item_id' => $product['id'],
-                    'branch_id' => $branchId
-                ])->first();
-
-                if ($stock)
-                {
-                    // update
-                    $stock->quantity += $quantity;
-                    $stock->cost_price = $costPrice;
-                    $stock->sell_price = $sellPrice;
-                    $stock->status = Stock::STATUS_ACTIVE;
-                    $stock->save();
+                    $paymentStatus = 'settled';
                 } else
                 {
-                    // create new
-                    Stock::query()->create([
+                    $paymentStatus = 'partial';
+                }
+
+                $status = 'completed';
+                if ($paymentStatus == 'pending')
+                {
+                    $status = 'pending';
+                }
+
+                $transactionDate = $request->get('transaction_date');
+                if($transactionDate) {
+                    $transactionDate = Carbon::now()->toDateString();
+                }
+
+                // create transaction
+                $transactionCode = ShopHelper::generateTransactionCode($loggedInUser);
+
+                $purchase = Purchase::query()->create([
+                    'barcode' => $transactionCode,
+                    'transaction_date' => Carbon::parse($transactionDate),
+                    'supplier_id' => $supplierId,
+                    'tenant_id' => $loggedInUser->tenant_id,
+                    'branch_id' => $branchId,
+                    'amount' => $grossAmount,
+                    'vat' => $taxRate,
+                    'status' => $status,
+                    'payment_status' => $paymentStatus,
+                    'user_id' => $loggedInUser->getUserId(),
+                ]);
+
+                // attach Items
+                foreach ($items as $barcode => $product)
+                {
+                    $quantity = $product['quantity'];
+                    $itemId = $product['id'];
+                    $costPrice = $product['price'];
+
+                    // attach item
+                    PurchaseItem::query()->create([
+                        'tenant_id' => $loggedInUser->tenant_id,
+                        'purchase_id' => $purchase->id,
+                        'item_id' => $itemId,
+                        'price' => $costPrice,
                         'quantity' => $quantity,
-                        'cost_price' => $costPrice,
-                        'sell_price' => $sellPrice,
-                        'item_id' => $item->id,
-                        'branch_id' => $branchId,
-                        'user_id' => $user->id
+                        'vat' => $taxRate,
                     ]);
                 }
-            }
 
-            // create payables if any
-            if ($paidAmount == 0 || $dueAmount > 0)
-            {
-                if (!$dueDate)
-                {
-                    throw new Exception("Due date required for credit purchases!");
-                }
-                PurchasesPayable::query()->create([
-                    'purchase_id' => $purchase->id,
-                    'transact_date' => Carbon::parse($transactDate),
-                    'branch_id' => $branchId,
-                    'user_id' => $user->id,
-                    'supplier_id' => $supplierId,
-                    'amount' => $dueAmount,
-                    'due_date' => Carbon::parse($dueDate),
+                // write line items
+                $journalEntry = JournalEntry::query()->create([
+                    'tenant_id' => $loggedInUser->tenant_id,
+                    'transactable_id' => $purchase->id,
+                    'transactable_type' => Purchase::class,
+                    'transaction_date' => $transactionDate,
+                    'amount' => $grossAmount,
                 ]);
-            }
-            // update user balance
-            // TODO: Implement user current balance update
-            settings()->commitTransaction();
-            return response()->json('Transaction Successful!');
-        } catch (Exception $ex)
+
+                $lineItems = [];
+
+                // Debit Purchases (Net Amount)
+                $lineItems[] = new LineItem([
+                    'tenant_id' => $loggedInUser->tenant_id,
+                    'general_ledger_account_id' => $purchaseGLA->id,
+                    'debit_record' => $netAmount,
+                ]);
+
+                // Credit Cash (Paid Amount)
+                if($paidAmount > 0){
+                    $lineItems[] = new LineItem([
+                        'tenant_id' => $loggedInUser->tenant_id,
+                        'general_ledger_account_id' => $loggedInUser->general_ledger_account_id,
+                        'credit_record' => $paidAmount,
+                    ]);
+                }
+
+                // Credit Payable (Due Amount)
+                if($dueAmount > 0){
+                    $accountsPayableGLA = GeneralLedgerAccount::query()->where([
+                        'name' => GeneralLedgerAccount::ACCOUNTS_PAYABLE_GLA_NAME
+                    ])->first();
+
+                    if($accountsPayableGLA){
+                        $lineItems[] = new LineItem([
+                            'tenant_id' => $loggedInUser->tenant_id,
+                            'general_ledger_account_id' => $accountsPayableGLA->id,
+                            'credit_record' => $dueAmount,
+                        ]);
+                    }
+
+                }
+
+                // Debit Sales Tax (Receivable) (Tax Amount)
+                if($taxAmount > 0){
+                    $purchaseTaxGLA = GeneralLedgerAccount::query()->where([
+                        'name' => GeneralLedgerAccount::PURCHASES_VAT_GLA_NAME
+                    ])->first();
+
+                    if($purchaseTaxGLA){
+                        $lineItems[] = new LineItem([
+                            'tenant_id' => $loggedInUser->tenant_id,
+                            'general_ledger_account_id' => $purchaseTaxGLA->id,
+                            'debit_record' => $taxAmount,
+                        ]);
+                    }
+                }
+
+                $journalEntry->line_items()->saveMany($lineItems);
+
+                // update user balance
+                if($paidAmount > 0)
+                {
+                    $loggedInUser->decrement('balance', $paidAmount);
+                }
+
+                // dispatch an event
+                PurchaseCompleted::dispatch($purchase);
+            });
+
+            return response()->json(['message' => 'Transaction Successful!'], Response::HTTP_CREATED);
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("COMPLETE_PURCHASE_TRANSACTION: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("COMPLETE_PURCHASE_TRANSACTION", $ex);
         }
     }
 }

@@ -18,9 +18,9 @@ class CreateUsersTable extends Migration
         Schema::create($this->table, function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id');
+            $table->unsignedBigInteger('general_ledger_account_id');
             $table->unsignedBigInteger('branch_id')->nullable();
-            $table->string('first_name');
-            $table->string('last_name');
+            $table->string('name');
             $table->enum('group', User::TYPES);
             $table->enum('gender', User::GENDERS)->nullable();
             $table->date('dob')->nullable();
@@ -40,6 +40,23 @@ class CreateUsersTable extends Migration
             $table->timestamp('password_last_changed')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamps();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreign('general_ledger_account_id')
+                  ->references('id')
+                  ->on('general_ledger_accounts')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreign('branch_id')
+                  ->references('id')
+                  ->on('branches')
+                  ->nullOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

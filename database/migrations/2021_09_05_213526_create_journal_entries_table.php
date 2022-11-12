@@ -18,7 +18,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('tenant_id');
             $table->unsignedBigInteger('transactable_id');
-            $table->unsignedBigInteger('transactable_type');
+            $table->string('transactable_type');
             $table->timestamp('transaction_date');
             $table->decimal('amount', 21, 2);
             $table->boolean('is_reversed')->default(false);

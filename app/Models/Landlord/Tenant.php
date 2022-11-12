@@ -3,14 +3,16 @@
 namespace App\Models\Landlord;
 
 use App\Models\Permission;
+use App\Models\Tenant\Category;
 use App\Models\Tenant\Customer;
 use App\Models\Tenant\ExpenseCategory;
 use App\Models\Tenant\ExpenseSubcategory;
 use App\Models\Tenant\GeneralLedgerAccount;
-use App\Models\Tenant\OrderReport;
+use App\Models\Tenant\Item;
 use App\Models\Tenant\Setting;
 use App\Models\Tenant\Supplier;
 use App\Models\Tenant\User;
+use App\ShopHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -90,36 +92,31 @@ class Tenant extends Model {
     {
         Log::info("Seeding tenant expense categories and subcategories", ['subdomain' => $this->subdomain]);
         $categories = [
-            [
-                'title' => "Operations",
-                'subcategories' => [
-                    ['title' => "Data"],
-                    ['title' => "DsTv"],
-                    ['title' => "Electricity"],
-                    ['title' => "Paper Rolls"],
-                    ['title' => "Generator Fuel"],
-                    ['title' => "Salaries"],
-                    ['title' => "Salary Advance"],
-                    ['title' => "Staff Allowance"],
-                    ['title' => "Branch Setup"],
-                    ['title' => "Rent"],
-                    ['title' => "Garbage"],
-                    ['title' => "Liquid Soap"],
-                    ['title' => "Transport"],
-                    ['title' => "Cartridge Refill"],
-                    ['title' => "Mobile Money Charges"],
-                    ['title' => "Printer Repairs"],
-                    ['title' => "Computer Repairs"],
-                    ['title' => "Electrical Repairs"],
-                    ['title' => "TV Repairs"],
-                    ['title' => "Computer Purchase"],
-                    ['title' => "Furniture"],
-                    ['title' => "License"],
-                    ['title' => "Lunch"],
-                    ['title' => "Water"],
-                    ['title' => "Shortage"],
-                ],
-            ],
+            ['title' => "Data"],
+            ['title' => "DsTv"],
+            ['title' => "Electricity"],
+            ['title' => "Paper Rolls"],
+            ['title' => "Generator Fuel"],
+            ['title' => "Salaries"],
+            ['title' => "Salary Advance"],
+            ['title' => "Staff Allowance"],
+            ['title' => "Branch Setup"],
+            ['title' => "Rent"],
+            ['title' => "Garbage"],
+            ['title' => "Liquid Soap"],
+            ['title' => "Transport"],
+            ['title' => "Cartridge Refill"],
+            ['title' => "Mobile Money Charges"],
+            ['title' => "Printer Repairs"],
+            ['title' => "Computer Repairs"],
+            ['title' => "Electrical Repairs"],
+            ['title' => "TV Repairs"],
+            ['title' => "Computer Purchase"],
+            ['title' => "Furniture"],
+            ['title' => "License"],
+            ['title' => "Lunch"],
+            ['title' => "Water"],
+            ['title' => "Shortage"],
         ];
         foreach ($categories as $category){
             $expenseCategory = ExpenseCategory::query()->updateOrCreate([
@@ -128,13 +125,6 @@ class Tenant extends Model {
             ],[
                 'title' => $category['title'],
             ]);
-            foreach ($category['subcategories'] as $subcategory) {
-                ExpenseSubcategory::query()->updateOrCreate([
-                    'tenant_id' => $this->id,
-                    'expense_category_id' => $expenseCategory->id,
-                    'title' => $subcategory['title'],
-                ], $subcategory);
-            }
         }
         Log::info("Seeded tenant expense categories and subcategories", ['subdomain' => $this->subdomain]);
         return $this;
@@ -175,106 +165,258 @@ class Tenant extends Model {
         return $this;
     }
 
+    public function seedCategoriesAndItems()
+    {
+        Log::info(" Categories And Items", ['subdomain' => $this->subdomain]);
+
+        // bottled items
+        $bottlesUnit = Unit::query()->firstOrCreate([
+            'slug' => 'btls'
+        ], [
+            'title' => 'Bottles',
+            'description' => 'Bottles',
+        ])->first();
+
+        $category = Category::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'title' => 'Mineral Water',
+        ], [
+            'description' => 'Bottled drinking water'
+        ]);
+
+        Item::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'category_id' => $category->id,
+            'unit_id' => $bottlesUnit->id,
+            'barcode' => ShopHelper::generateBarcode($this->id, $category->id),
+        ], [
+            'title' => 'Rema mineral water (500ml)',
+            'description' => 'Rema mineral water (500ml)'
+        ]);
+
+        Item::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'category_id' => $category->id,
+            'unit_id' => $bottlesUnit->id,
+            'barcode' => ShopHelper::generateBarcode($this->id, $category->id),
+        ], [
+            'title' => 'Rwenzori mineral water (500ml)',
+            'description' => 'Rwenzori mineral water (500ml)'
+        ]);
+
+        Item::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'category_id' => $category->id,
+            'unit_id' => $bottlesUnit->id,
+            'barcode' => ShopHelper::generateBarcode($this->id, $category->id),
+        ], [
+            'title' => 'Rwenzori mineral water (2.25ltr)',
+            'description' => 'Rwenzori mineral water (2.25ltr)'
+        ]);
+
+        $category = Category::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'title' => 'Cocacola',
+        ], [
+            'description' => 'Cocacola Soda'
+        ]);
+
+        Item::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'category_id' => $category->id,
+            'unit_id' => $bottlesUnit->id,
+            'barcode' => ShopHelper::generateBarcode($this->id, $category->id),
+        ], [
+            'title' => 'Cocacola (500ml)',
+            'description' => 'Cocacola (500ml)'
+        ]);
+
+        Item::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'category_id' => $category->id,
+            'unit_id' => $bottlesUnit->id,
+            'barcode' => ShopHelper::generateBarcode($this->id, $category->id),
+        ], [
+            'title' => 'Cocacola (1.5l)',
+            'description' => 'Cocacola (1.5l)'
+        ]);
+
+        // packed items
+        $kgsUnit = Unit::query()->firstOrCreate([
+            'slug' => 'kgs'
+        ], [
+            'title' => 'Kilograms',
+            'description' => 'Kilograms (1000 grams)',
+        ])->first();
+
+        $category = Category::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'title' => 'Sugar',
+        ], [
+            'description' => 'Packed Sugar'
+        ]);
+
+        Item::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'category_id' => $category->id,
+            'unit_id' => $kgsUnit->id,
+            'barcode' => ShopHelper::generateBarcode($this->id, $category->id),
+        ], [
+            'title' => 'Kakira Sugar (1kg)',
+            'description' => 'Kakira Sugar (1kg)'
+        ]);
+
+        Item::query()->updateOrCreate([
+            'tenant_id' => $this->id,
+            'category_id' => $category->id,
+            'unit_id' => $kgsUnit->id,
+            'barcode' => ShopHelper::generateBarcode($this->id, $category->id),
+        ], [
+            'title' => 'Kakira Sugar (5kg)',
+            'description' => 'Kakira Sugar (5kg)'
+        ]);
+
+
+        Log::info("Seeded Tenant Categories And Items", ['subdomain' => $this->subdomain]);
+        return $this;
+    }
+
     public function seedGeneralLedgerAccounts()
     {
         Log::info("Seeding Tenant GeneralLedgerAccounts", ['subdomain' => $this->subdomain]);
         // Assets
         $asset_gla = GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::ASSET_GLA_NAME,
-            'account_type' => GeneralLedgerAccount::TYPE_ASSET
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::CASH_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_ASSET,
-            'parent_id' => $asset_gla->id
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::BANK_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_ASSET,
-            'parent_id' => $asset_gla->id
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::SALES_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_ASSET,
-            'parent_id' => $asset_gla->id
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::ACCOUNTS_RECEIVABLE_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_ASSET,
-            'parent_id' => $asset_gla->id
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::PURCHASES_VAT_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_ASSET,
-            'parent_id' => $asset_gla->id
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::PURCHASES_DISCOUNTS_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_ASSET,
-            'parent_id' => $asset_gla->id
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::DRAWINGS_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_ASSET,
-            'parent_id' => $asset_gla->id
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
         ]);
 
 
         // Liabilities
         $liability_gla = GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::LIABILITY_GLA_NAME,
-            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY
+            'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::PURCHASES_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
-            'parent_id' => $liability_gla->id
+            'parent_id' => $liability_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::CAPITAL_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
-            'parent_id' => $liability_gla->id
+            'parent_id' => $liability_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::ACCOUNTS_PAYABLE_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
-            'parent_id' => $liability_gla->id
+            'parent_id' => $liability_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::SALES_VAT_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
-            'parent_id' => $liability_gla->id
+            'parent_id' => $liability_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::SALES_DISCOUNTS_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
-            'parent_id' => $liability_gla->id
+            'parent_id' => $liability_gla->id,
+            'tenant_id' => $this->id
         ]);
 
-        GeneralLedgerAccount::createOrUpdate([
+        GeneralLedgerAccount::updateOrCreate([
             'name' => GeneralLedgerAccount::EXPENSES_GLA_NAME,
             'account_type' => GeneralLedgerAccount::TYPE_LIABILITY,
-            'parent_id' => $liability_gla->id
+            'parent_id' => $liability_gla->id,
+            'tenant_id' => $this->id
         ]);
 
         Log::info("Seeded Tenant GeneralLedgerAccounts", ['subdomain' => $this->subdomain]);
         return $this;
     }
 
-    public function createAdminUser(string $password){
+    public function createAdminUser(string $password) {
         Log::info("Creating Tenant Admin User", ['subdomain' => $this->subdomain]);
+        // Get the GLAs
+        $asset_gla = GeneralLedgerAccount::updateOrCreate([
+            'name' => GeneralLedgerAccount::ASSET_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'tenant_id' => $this->id
+        ]);
+
+        $cash_gla = GeneralLedgerAccount::updateOrCreate([
+            'name' => GeneralLedgerAccount::CASH_GLA_NAME,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $asset_gla->id,
+            'tenant_id' => $this->id
+        ]);
+
+        // Create the User's GLA
+        $gla = GeneralLedgerAccount::updateOrCreate([
+            'name' => $this->subdomain,
+            'account_type' => GeneralLedgerAccount::TYPE_ASSET,
+            'parent_id' => $cash_gla->id,
+            'tenant_id' => $this->id
+        ]);
         // Seed Tenant Admin User
         // Give all the permissions
         $permissions = [];
@@ -284,12 +426,12 @@ class Tenant extends Model {
 
         $adminCredentials = [
             "password" => Hash::make($password),
-            "first_name" => 'Admin',
-            "last_name" => 'Admin',
+            "name" => 'Admin',
             "group" => User::TYPE_ADMINISTRATORS,
             "avatar" => '/images/avatar.png',
             'active' => true,
             'permissions' => $permissions,
+            "general_ledger_account_id" => $gla->id,
         ];
         // create the admin user
         User::query()->updateOrCreate([

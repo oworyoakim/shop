@@ -19,18 +19,15 @@ class CreatePurchasesTable extends Migration
         Schema::create($this->table, function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('tenant_id');
+            $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('purchase_order_id')->nullable();
             $table->unsignedBigInteger('supplier_id')->nullable();
             $table->unsignedBigInteger('branch_id')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();
             $table->string('barcode')->unique();
-            $table->timestamp('purchased_at');
-            $table->decimal('gross_amount', 21, 2)->default(0.00);
-            $table->decimal('vat_rate', 5, 2)->default(0.00);
-            $table->decimal('vat_amount', 21, 2)->default(0.00);
-            $table->decimal('discount_rate', 5, 2)->default(0.00);
-            $table->decimal('discount_amount', 21, 2)->default(0.00);
-            $table->decimal('net_amount', 21, 2)->default(0.00);
+            $table->timestamp('transaction_date');
+            $table->decimal('amount', 21, 2)->default(0.00);
+            $table->decimal('discount', 5, 2)->default(0.00);
+            $table->decimal('vat', 5, 2)->default(0.00);
             $table->enum('status', [
                 Purchase::STATUS_PENDING,
                 Purchase::STATUS_COMPLETED,
@@ -46,6 +43,31 @@ class CreatePurchasesTable extends Migration
             ])->default(Purchase::PAYMENT_STATUS_SETTLED);
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('user_id')
+                  ->references('id')
+                  ->on('users')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('branch_id')
+                  ->references('id')
+                  ->on('branches')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('supplier_id')
+                  ->references('id')
+                  ->on('suppliers')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('purchase_order_id')
+                  ->references('id')
+                  ->on('purchase_orders')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

@@ -21,13 +21,11 @@ class CreateSaleItemsTable extends Migration
             $table->unsignedBigInteger('tenant_id');
             $table->unsignedBigInteger('sale_id');
             $table->unsignedBigInteger('item_id');
-            $table->decimal('sell_price', 21, 2)->default(0.00);
-            $table->decimal('quantity', 10, 2)->default(0.00);
+            $table->decimal('price', 21, 2);
+            $table->decimal('quantity', 10, 2);
+            $table->decimal('discount', 5, 2)->default(0.00);
+            $table->decimal('vat', 5, 2)->default(0.00);
             $table->decimal('returns', 10, 2)->default(0.00);
-            $table->decimal('gross_amount', 21, 2)->default(0.00);
-            $table->decimal('net_amount', 21, 2)->default(0.00);
-            $table->decimal('discount_rate', 21, 2)->default(0.00);
-            $table->decimal('discount_amount', 21, 2)->default(0.00);
             $table->enum('status', [
                 SaleItem::STATUS_PENDING,
                 SaleItem::STATUS_COMPLETED,
@@ -38,6 +36,21 @@ class CreateSaleItemsTable extends Migration
             $table->text('comment')->nullable();
             $table->timestamps();
             $table->unique(['sale_id', 'item_id'], 'sale_item_unique');
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('sale_id')
+                  ->references('id')
+                  ->on('sales')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('item_id')
+                  ->references('id')
+                  ->on('items')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

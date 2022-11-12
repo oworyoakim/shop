@@ -15,8 +15,9 @@ class CreateItemStocksViewTable extends Migration
      */
     public function up()
     {
+        DB::statement("DROP VIEW IF EXISTS {$this->table};");
         $sql = DB::table('items')
-                 ->select('items.id', 'items.barcode', 'items.secondary_barcode as secondaryBarcode', 'items.title', 'items.account', 'stocks.branch_id as branchId','stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity as stockQty', 'stocks.discount', 'stocks.secondary_discount as secondaryDiscount', 'stocks.status', 'units.id as unitId', 'units.slug as unit', 'categories.id as categoryId', 'categories.title as category')
+                 ->select('items.id', 'items.barcode', 'items.secondary_barcode as secondaryBarcode', 'items.title', 'stocks.branch_id as branchId','stocks.sell_price as sellPrice', 'stocks.cost_price as costPrice', 'stocks.quantity as stockQty', 'stocks.discount', 'stocks.secondary_discount as secondaryDiscount', 'stocks.status', 'units.id as unitId', 'units.slug as unit', 'categories.id as categoryId', 'categories.title as category')
                  ->leftJoin('stocks', 'items.id', '=', 'stocks.item_id')
                  ->leftJoin('units', 'items.unit_id', '=', 'units.id')
                  ->leftJoin('categories', 'items.category_id', '=', 'categories.id')

@@ -8,6 +8,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Landlord\Tenant;
 use App\Models\Scopes\TenantScope;
 use App\Traits\PermissionsTrait;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,8 +18,7 @@ use Illuminate\Support\Carbon;
  * Class User
  * @package App\Models
  * @property int id
- * @property string first_name
- * @property string last_name
+ * @property string name
  * @property string group
  * @property string gender
  * @property string username
@@ -29,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property string address
  * @property string avatar
  * @property bool active
+ * @property int general_ledger_account_id
  * @property int tenant_id
  * @property int branch_id
  * @property double current_balance
@@ -92,15 +93,23 @@ class User extends Authenticatable
         self::TYPE_SUPERVISORS,
     ];
 
-
-    public function getFullNameAttribute()
-    {
-        return $this->first_name . ' ' . $this->last_name;
+    public function getUserId() {
+        return $this->id;
     }
 
     public function getFullAddressAttribute()
     {
         return $this->address . ', ' . $this->city . ' ' . $this->country;
+    }
+
+    public function general_ledger_account()
+    {
+        return $this->belongsTo(GeneralLedgerAccount::class, 'general_ledger_account_id');
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id');
     }
 
     public function branch()
@@ -113,12 +122,6 @@ class User extends Authenticatable
         return $this->hasMany(Sale::class, 'user_id');
     }
 
-    public function receivables()
-    {
-        return $this->hasMany(SaleReceivable::class, 'user_id');
-    }
-
-
     public function expenses()
     {
         return $this->hasMany(Expense::class, 'user_id');
@@ -127,204 +130,6 @@ class User extends Authenticatable
     public function purchases()
     {
         return $this->hasMany(PurchaseItem::class, 'user_id');
-    }
-
-    public function payables()
-    {
-        return $this->hasMany(PurchasePayable::class, 'user_id');
-    }
-
-    public function uncanceledSales()
-    {
-        return $this->sales()->uncanceled();
-    }
-
-
-    public function uncanceledPurchases()
-    {
-        return $this->purchases()->uncanceled();
-    }
-
-    public function uncanceledExpenses()
-    {
-        return $this->expenses()->uncanceled();
-    }
-
-
-    public function daysSales($date)
-    {
-        return $this->uncanceledSales()->whereDate('transaction_date', $date);
-    }
-
-    public function daysReceivables($date)
-    {
-        return $this->receivables()->whereDate('transaction_date', $date);
-    }
-
-
-    public function daysTotalReceivables($date)
-    {
-        return $this->daysReceivables($date)
-                    ->get()
-                    ->reduce(function (SaleReceivable $receivable, $amount) {
-                        return $amount + $receivable->balance();
-                    }, 0);
-    }
-
-    public function monthsReceivables($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->receivables()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-
-    public function monthsTotalReceivables($date)
-    {
-        return $this->monthsTotalReceivables($date)
-                    ->get()
-                    ->reduce(function (SaleReceivable $receivable, $amount) {
-                        return $amount + $receivable->balance();
-                    }, 0);
-    }
-
-
-    public function monthsSales($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->uncanceledSales()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-
-    public function overallTotalReceivables()
-    {
-        return $this->receivables()
-                    ->get()
-                    ->reduce(function (SaleReceivable $receivable, $amount) {
-                        return $amount + $receivable->balance();
-                    }, 0);
-    }
-
-    public function daysPurchases($date)
-    {
-        return $this->uncanceledPurchases()->whereDate('transaction_date', $date);
-    }
-
-
-    public function daysPayables($date)
-    {
-        return $this->payables()->unsettled()->whereDate('transaction_date', $date);
-    }
-
-    public function daysTotalPayables($date)
-    {
-        return $this->daysPayables($date)
-                    ->get()
-                    ->reduce(function (PurchasePayable $payable, $amount) {
-                        return $amount + $payable->balance();
-                    }, 0);
-    }
-
-
-    public function monthsPurchases($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->uncanceledPurchases()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsPayables($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->payables()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsTotalPayables($date)
-    {
-        return $this->monthsPayables($date)
-                    ->get()
-                    ->reduce(function (PurchasePayable $payable, $amount) {
-                        return $amount + $payable->balance();
-                    }, 0);
-    }
-
-    public function overallTotalPayables()
-    {
-        return $this->payables()
-                    ->get()
-                    ->reduce(function (PurchasePayable $payable, $amount) {
-                        return $amount + $payable->balance();
-                    }, 0);
-    }
-
-    public function daysExpenses($date)
-    {
-        return $this->uncanceledExpenses()->whereDate('expense_date', $date);
-    }
-
-
-    public function monthsExpenses($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->uncanceledExpenses()
-                    ->whereYear('expense_date', $year)
-                    ->whereMonth('expense_date', $month);
-    }
-
-    public function daysReturnsInwards($date)
-    {
-        return $this->daysSales($date)
-                    ->whereIn('payment_status', [Sale::STATUS_PARTIALLY_RETURNED, Sale::STATUS_FULLY_RETURNED]);
-    }
-
-    public function daysTotalReturnsInwards($date)
-    {
-        return $this->daysReturnsInwards($date)
-                    ->get()
-                    ->reduce(function (Sale $sale, $amount) {
-                        return $amount + $sale->returnsInwards();
-                    }, 0);
-    }
-
-    public function monthsReturnsInwards($date)
-    {
-        return $this->monthsSales($date)
-                    ->whereIn('payment_status', [Sale::STATUS_PARTIALLY_RETURNED, Sale::STATUS_FULLY_RETURNED]);
-    }
-
-    public function monthsTotalReturnsInwards($date)
-    {
-        return $this->monthsReturnsInwards($date)
-                    ->get()
-                    ->reduce(function (Sale $sale, $amount) {
-                        return $amount + $sale->returnsInwards();
-                    }, 0);
-    }
-
-    public function overallReturnsInwards()
-    {
-        return $this->uncanceledSales()
-                    ->whereIn('payment_status', [Sale::STATUS_PARTIALLY_RETURNED, Sale::STATUS_FULLY_RETURNED]);
-    }
-
-    public function overallTotalReturnsInwards()
-    {
-        return $this->overallReturnsInwards()
-                    ->get()
-                    ->reduce(function (Sale $sale, $amount) {
-                        return $amount + $sale->returnsInwards();
-                    }, 0);
     }
 
     /**
@@ -397,5 +202,13 @@ class User extends Authenticatable
     public function getBalance()
     {
         return $this->balance;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function computedBalance()
+    {
+        return $this->general_ledger_account->computedBalance();
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Landlord\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TenantController extends Controller
@@ -60,7 +61,9 @@ class TenantController extends Controller
                 'password' => $password,
             ];
             // create the tenant
-            $tenant = ShopHelper::createTenant($data);
+            DB::transaction(function () use ($data) {
+                return ShopHelper::createTenant($data);
+            });
             return response()->json("Tenant Created!");
         } catch (\Exception $ex)
         {

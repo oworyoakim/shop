@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\TenantBaseController;
 use App\Models\Country;
 use App\Models\Landlord\Unit;
+use App\Models\Tenant\Branch;
 use App\Models\Tenant\Category;
 use App\Models\Tenant\Customer;
 use App\Models\Tenant\Supplier;
@@ -13,6 +14,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class HomeController extends TenantBaseController
 {
@@ -84,11 +86,35 @@ class HomeController extends TenantBaseController
         try
         {
             $data = [
-                'units' => Unit::all(['id', 'title']),
-                'categories' => Category::all(['id', 'title']),
-                'suppliers' => Supplier::all(['id', 'name', 'email', 'phone']),
-                'customers' => Customer::all(['id', 'name', 'email', 'phone']),
+                'units' => [],
+                'categories' => [],
+                'suppliers' => [],
+                'customers' => [],
+                'branches' => [],
             ];
+
+            $options = $request->get('options');
+
+            if(Str::contains($options, 'units')){
+                $data['units'] = Unit::all(['id', 'title']);
+            }
+
+            if(Str::contains($options, 'categories')){
+                $data['categories'] = Category::all(['id', 'title']);
+            }
+
+            if(Str::contains($options, 'suppliers')){
+                $data['suppliers'] = Supplier::all(['id', 'name', 'email', 'phone']);
+            }
+
+            if(Str::contains($options, 'customers')){
+                $data['customers'] = Customer::all(['id', 'name', 'email', 'phone']);
+            }
+
+            if(Str::contains($options, 'branches')){
+                $data['branches'] = Branch::all(['id', 'name']);
+            }
+
             return response()->json($data);
         } catch (Exception $ex)
         {

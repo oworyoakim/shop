@@ -7,6 +7,8 @@ export default {
     USERS: '/v1/users',
     CATEGORIES: '/v1/categories',
     ITEMS: '/v1/items',
+    PURCHASES: '/v1/purchases',
+    STOCKS: '/v1/stocks',
     BRANCHES: '/v1/branches',
     GET_ITEM_BY_BARCODE: '/v1/get-item-by-barcode',
     SALABLE_PRODUCTS: '/v1/salable-products',

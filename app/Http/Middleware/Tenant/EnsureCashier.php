@@ -21,7 +21,7 @@ class EnsureCashier
     public function handle(Request $request, Closure $next)
     {
         $user = $this->getUser();
-        //managers
+        // managers
         if ($user->isCashier())
         {
             return $next($request);

@@ -3,15 +3,11 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\TenantBaseController;
-use App\Models\Category;
-use Cartalyst\Sentinel\Laravel\Facades\Sentinel;
-use Exception;
+use App\Models\Tenant\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use stdClass;
 
 class CategoriesController extends TenantBaseController
 {
@@ -19,22 +15,22 @@ class CategoriesController extends TenantBaseController
     {
         try
         {
-            $categories = Category::all()->transform(function (Category $item) {
-                $category = new stdClass();
-                $category->id = $item->id;
-                $category->slug = $item->slug;
-                $category->title = $item->title;
-                $category->description = $item->description;
-                $category->itemsCount = $item->items()->count();
-                $category->canBeEdited = Sentinel::hasAnyAccess(['categories.update']);
-                $category->canBeDeleted = Sentinel::hasAnyAccess(['categories.delete']);
+            $loggedInUser = $this->getUser();
+            $productCategories = Category::query()->withCount('items')->paginate(10);
+
+            $categories = $productCategories->getCollection();
+            $modifiedCategories = $categories->map(function ($category) use ($loggedInUser){
+                $category->canBeEdited = $loggedInUser->hasAnyAccess(['tenant.categories.update']);
+                $category->canBeDeleted = $loggedInUser->hasAnyAccess(['tenant.categories.delete']);
                 return $category;
             });
-            return response()->json($categories);
-        } catch (Exception $ex)
+
+            $productCategories->setCollection($modifiedCategories);
+
+            return response()->json($productCategories);
+        } catch (\Throwable $ex)
         {
-            Log::error("GET_CATEGORIES: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('GET_CATEGORIES', $ex);
         }
     }
 
@@ -42,112 +38,117 @@ class CategoriesController extends TenantBaseController
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['categories.create']))
+            $loggedInUser = $this->getUser();
+            if (!$loggedInUser->hasAnyAccess(['tenant.categories.create']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json([
+                    'message' => "Permission Denied!"
+                ], Response::HTTP_FORBIDDEN);
             }
 
             $validator = Validator::make($request->all(), [
-                'title' => 'required|unique:categories',
+                'title' => 'required',
             ]);
+
             if ($validator->fails())
             {
-                $errors = "";
-                foreach ($validator->errors()->messages() as $key => $messages)
-                {
-                    $errors .= "<p class='text-small'>" . ucfirst($key) . ": " . implode('<br/>', $messages) . "</p>";
-                }
-                throw new Exception("Validation Error: {$errors}");
+                return response()->json([
+                    "message" => "Validation Errors",
+                    "errors" => $validator->errors()->messages(),
+                ], Response::HTTP_BAD_REQUEST);
             }
+
             $title = $request->get('title');
             $description = $request->get('description');
-            $user = Sentinel::getUser();
+
             Category::create([
                 'title' => $title,
-                'slug' => Str::slug($title),
                 'description' => $description,
-                'user_id' => $user->getUserId()
+                'user_id' => $loggedInUser->id,
+                'tenant_id' => $loggedInUser->tenant_id,
             ]);
             return response()->json('Category Created!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("CREATE_CATEGORY: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException('CREATE_CATEGORY', $ex);
         }
     }
 
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['categories.update']))
+            $loggedInUser = $this->getUser();
+            if (!$loggedInUser->hasAnyAccess(['tenant.categories.update']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json([
+                    'message' => "Permission Denied!"
+                ], Response::HTTP_FORBIDDEN);
             }
 
-            $unitId = $request->get('id');
-            $category = Category::query()->find($unitId);
+            $category = Category::query()->find($id);
 
             if (!$category)
             {
-                throw new Exception("Category not found!");
+                return response()->json([
+                    'message' => "Category not found!"
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'title' => 'required',
+            ]);
+
+            if ($validator->fails())
+            {
+                return response()->json([
+                    "message" => "Validation Errors",
+                    "errors" => $validator->errors()->messages(),
+                ], Response::HTTP_BAD_REQUEST);
             }
 
             $title = $request->get('title');
             $description = $request->get('description');
-            if ($title != $category->title)
-            {
-                $validator = Validator::make($request->all(), [
-                    'title' => 'required|unique:categories',
-                ]);
-                if ($validator->fails())
-                {
-                    $errors = "";
-                    foreach ($validator->errors()->messages() as $key => $messages)
-                    {
-                        $errors .= "<p class='text-small'>" . ucfirst($key) . ": " . implode('<br/>', $messages) . "</p>";
-                    }
-                    throw new Exception("Validation Error: {$errors}");
-                }
-                $category->slug = Str::slug($title);
-            }
-            $category->title = $title;
-            $category->description = $description;
-            $category->save();
+
+            $category->update([
+                'title' => $title,
+                'description' => $description,
+            ]);
             return response()->json('Category Updated!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            Log::error("UPDATE_CATEGORY: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("UPDATE_CATEGORY", $ex);
         }
     }
 
-    public function delete(Request $request)
+    public function delete(Request $request, $id)
     {
         try
         {
-            if (!Sentinel::hasAnyAccess(['categories.delete']))
+            $loggedInUser = $this->getUser();
+            if (!$loggedInUser->hasAnyAccess(['tenant.categories.delete']))
             {
-                throw new Exception("Permission Denied!");
+                return response()->json([
+                    'message' => "Permission Denied!"
+                ], Response::HTTP_FORBIDDEN);
             }
 
-            $categoryId = $request->get('category_id');
-            $category = Category::query()->find($categoryId);
+            $category = Category::query()->find($id);
 
             if (!$category)
             {
-                throw new Exception("Category not found!");
+                return response()->json([
+                    'message' => "Category not found!"
+                ], Response::HTTP_FORBIDDEN);
             }
-            settings()->beginTransaction();
-            $category->items()->delete();
-            $category->delete();
-            settings()->commitTransaction();
+            DB::transaction(function () use ($category) {
+                $category->items()->delete();
+                $category->delete();
+            });
             return response()->json('Category Deleted!');
-        } catch (Exception $ex)
+        } catch (\Throwable $ex)
         {
-            settings()->rollbackTransaction();
-            Log::error("DELETE_CATEGORY: {$ex->getMessage()}");
-            return response()->json($ex->getMessage(), Response::HTTP_FORBIDDEN);
+            return $this->handleJsonRequestException("DELETE_CATEGORY", $ex);
         }
     }
 }

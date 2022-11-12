@@ -30,8 +30,15 @@ class CreateSettingsTable extends Migration
             $table->unsignedInteger('bonus_percent')->default(0);
             $table->unsignedInteger('cancel_order_limit')->default(30);
             $table->unsignedInteger('numeric_percent')->default(60);
+            $table->boolean('enable_global_margin')->default(false);
+            $table->decimal('profit_margin', 5,2)->default(0);
             $table->string('logo')->nullable();
             $table->timestamps();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

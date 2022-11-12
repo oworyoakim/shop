@@ -13,9 +13,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        $this->call(AdminTableSeeder::class);
-        $this->call(PermissionsTableSeeder::class);
-        $this->call(UnitsTableSeeder::class);
-        $this->call(TenantTableSeeder::class);
+        echo("\nTo seed for development type: \n     php artisan db:seed --class=DevDatabaseSeeder \n");
+        echo("\nTo seed for production type: \n     php artisan db:seed --class=ProductionDatabaseSeeder \n\n");
     }
 }

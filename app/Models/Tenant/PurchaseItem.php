@@ -16,11 +16,8 @@ use Illuminate\Support\Carbon;
  * @property  int purchase_id
  * @property  int item_id
  * @property  double cost_price
- * @property  double gross_amount
  * @property  double quantity
- * @property  float discount_rate
- * @property  double discount_amount
- * @property  double net_amount
+ * @property  float vat_rate
  * @property string status
  * @property  Carbon expiry_date
  * @property  Carbon created_at
@@ -61,8 +58,8 @@ class PurchaseItem extends Model
     public function returnsOutwardsAmount()
     {
         $amount = $this->returns * $this->cost_price;
-        $discount = round($amount * $this->discount_rate / 100, 0);
-        return $amount - $discount;
+        $tax = round($amount * $this->vat_rate / 100, 0);
+        return $amount + $tax;
     }
 
     public function grossAmountAfterReturns()
@@ -73,7 +70,7 @@ class PurchaseItem extends Model
     public function netAmountAfterReturns()
     {
         $amount = ($this->quantity - $this->returns) * $this->cost_price;
-        $discount = round($amount * $this->discount_rate / 100, 0);
-        return $amount - $discount;
+        $tax = round($amount * $this->vat_rate / 100, 0);
+        return $amount + $tax;
     }
 }

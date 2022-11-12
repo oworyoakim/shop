@@ -5,6 +5,7 @@ namespace App\Models\Tenant;
 use App\Models\Landlord\Unit;
 use App\Models\Scopes\TenantScope;
 use App\Traits\Tenant\Commentable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
@@ -20,7 +21,6 @@ use Illuminate\Support\Carbon;
  * @property string slug
  * @property string description
  * @property string barcode
- * @property string account
  * @property string avatar
  * @property float margin
  * @property int user_id
@@ -30,15 +30,11 @@ use Illuminate\Support\Carbon;
  */
 class Item extends Model
 {
-    use SoftDeletes, Commentable;
+    use SoftDeletes, Commentable, HasFactory;
 
     protected $table = 'items';
     protected $dates = ['deleted_at'];
     protected $guarded = [];
-
-    const ACCOUNT_SALES_ONLY = 'sales';
-    const ACCOUNT_PURCHASES_ONLY = 'purchases';
-    const ACCOUNT_BOTH = 'both';
 
     /**
      * The "booting" method of the model.

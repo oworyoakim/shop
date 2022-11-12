@@ -29,8 +29,6 @@ use Illuminate\Support\Carbon;
  */
 class SaleItem extends Model
 {
-    use SoftDeletes;
-
     protected $table = 'sale_items';
 
     protected $guarded = [];

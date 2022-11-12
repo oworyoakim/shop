@@ -3,18 +3,22 @@ import VueRouter from "vue-router";
 
 Vue.use(VueRouter);
 
-import Dashboard from '../views/Dashboard';
-import Categories from '../views/Categories';
-import Items from '../views/Items';
-import Shops from '../views/Shops';
-import Stocks from '../views/Stocks';
-import Purchases from '../views/Purchases';
-import Sales from '../views/Sales';
-import Users from '../views/Users';
-import Suppliers from '../views/Suppliers';
-import Customers from '../views/Customers';
-import Profile from '../views/Profile';
-import Settings from '../views/Settings';
+import Dashboard from '../views/Dashboard/Index';
+import Shops from '../views/Shops/Index';
+import Sales from '../views/Sales/Index';
+import Users from '../views/Users/Index';
+import Customers from '../views/Customers/Index';
+import Profile from '../views/Profile/Index';
+import Settings from '../views/Settings/Index';
+
+// Inventory Routes
+import Inventory from '../views/Inventory/Index';
+import Purchases from '../views/Inventory/Purchases';
+import Items from "../views/Inventory/Items";
+import Categories from "../views/Inventory/Categories";
+import Suppliers from "../views/Inventory/Suppliers";
+import Stocks from "../views/Inventory/Stocks";
+import AccountsPayable from "../views/Inventory/AccountsPayable";
 
 const routes = [
     {
@@ -27,29 +31,46 @@ const routes = [
         component: Dashboard
     },
     {
-        path: '/Categories',
-        name: 'Categories',
-        component: Categories
-    },
-    {
-        path: '/Items',
-        name: 'Items',
-        component: Items
-    },
-    {
         path: '/Shops',
         name: 'Shops',
         component: Shops
     },
     {
-        path: '/Stocks',
-        name: 'Stocks',
-        component: Stocks
-    },
-    {
-        path: '/Purchases',
-        name: 'Purchases',
-        component: Purchases
+        path: '/Inventory',
+        name: 'Inventory',
+        component: Inventory,
+        children: [
+            {
+                path: 'Items',
+                name: 'Items',
+                component: Items
+            },
+            {
+                path: 'Categories',
+                name: 'Categories',
+                component: Categories
+            },
+            {
+                path: 'Suppliers',
+                name: 'Suppliers',
+                component: Suppliers
+            },
+            {
+                path: 'Purchases',
+                name: 'Purchases',
+                component: Purchases
+            },
+            {
+                path: 'Stocks',
+                name: 'Stocks',
+                component: Stocks
+            },
+            {
+                path: 'AccountsPayable',
+                name: 'AccountsPayable',
+                component: AccountsPayable
+            },
+        ],
     },
     {
         path: '/Sales',
@@ -65,12 +86,6 @@ const routes = [
         path: '/Settings',
         name: 'Settings',
         component: Settings
-    },
-
-    {
-        path: '/Suppliers',
-        name: 'Suppliers',
-        component: Suppliers
     },
     {
         path: '/Customers',

@@ -6443,31 +6443,6 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   props: {
     items: {
@@ -6479,17 +6454,18 @@ __webpack_require__.r(__webpack_exports__);
     }
   },
   methods: {
-    previousPage: function previousPage() {
-      this.$emit('gotoPage', this.items.previousPage);
+    gotoPage: function gotoPage(url) {
+      var page = this.getPageNumberFromUrl(url);
+
+      if (page > 0) {
+        this.$emit("gotoPage", page);
+      }
     },
-    nextPage: function nextPage() {
-      this.$emit('gotoPage', this.items.nextPage);
-    },
-    firstPage: function firstPage() {
-      this.$emit('gotoPage', this.items.firstPage);
-    },
-    lastPage: function lastPage() {
-      this.$emit('gotoPage', this.items.lastPage);
+    getPageNumberFromUrl: function getPageNumberFromUrl(url) {
+      var urlObject = new URL(url);
+      var queryStrings = urlObject.search;
+      var urlParams = new URLSearchParams(queryStrings);
+      return Number(urlParams.get('page'));
     }
   }
 });
@@ -7536,7 +7512,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "deepClone": () => (/* binding */ deepClone),
 /* harmony export */   "isEqual": () => (/* binding */ isEqual),
 /* harmony export */   "prepareQueryParams": () => (/* binding */ prepareQueryParams),
-/* harmony export */   "resolveError": () => (/* binding */ resolveError)
+/* harmony export */   "resolveError": () => (/* binding */ resolveError),
+/* harmony export */   "toNearestHundredsLower": () => (/* binding */ toNearestHundredsLower)
 /* harmony export */ });
 /* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
 /* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_0__);
@@ -7594,6 +7571,10 @@ function createFormDataFromPayload() {
   }
 
   return formData;
+} //to round down to nearest hundreds
+
+function toNearestHundredsLower(num) {
+  return Math.floor(num / 100) * 100;
 }
 
 /***/ }),
@@ -65571,210 +65552,59 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return !!_vm.items && _vm.items.hasPages
+  return !!_vm.items
     ? _c(
         "ul",
-        { staticClass: "pagination pull-right", attrs: { role: "navigation" } },
+        { staticClass: "pagination pagination-sm m-0 float-right" },
         [
-          _vm.items.currentPage <= 1
-            ? [_vm._m(0), _vm._v(" "), _vm._m(1)]
-            : [
-                _c(
-                  "li",
-                  {
-                    staticClass: "page-item",
-                    attrs: { "aria-label": _vm.items.firstPage },
-                  },
-                  [
-                    _c(
-                      "a",
-                      {
-                        staticClass: "page-link",
-                        attrs: { href: "javascript:void(0);", rel: "next" },
-                        on: { click: _vm.firstPage },
-                      },
-                      [_vm._v("First")]
-                    ),
+          _vm._l(_vm.items.links, function (link) {
+            return [
+              !link.url || link.active
+                ? [
+                    _c("li", { staticClass: "page-item disabled" }, [
+                      _c(
+                        "a",
+                        {
+                          staticClass: "page-link disabled",
+                          attrs: { href: "javascript:void(0);" },
+                        },
+                        [
+                          _c("span", {
+                            domProps: { innerHTML: _vm._s(link.label) },
+                          }),
+                        ]
+                      ),
+                    ]),
                   ]
-                ),
-                _vm._v(" "),
-                _c(
-                  "li",
-                  {
-                    staticClass: "page-item",
-                    attrs: { "aria-label": _vm.items.previousPage },
-                  },
-                  [
-                    _c(
-                      "a",
-                      {
-                        staticClass: "page-link",
-                        attrs: { href: "javascript:void(0);", rel: "prev" },
-                        on: { click: _vm.previousPage },
-                      },
-                      [_vm._v("Previous")]
-                    ),
-                  ]
-                ),
-              ],
-          _vm._v(" "),
-          _c(
-            "li",
-            {
-              staticClass: "page-item active disabled",
-              attrs: {
-                "aria-disabled": "true",
-                "aria-label": _vm.items.currentPage,
-              },
-            },
-            [
-              _c(
-                "a",
-                {
-                  staticClass: "page-link",
-                  attrs: { href: "javascript:void(0);", rel: "current" },
-                },
-                [
-                  _c("span", { staticClass: "text-red" }, [
-                    _vm._v(
-                      " Page " +
-                        _vm._s(_vm.items.currentPage) +
-                        " of " +
-                        _vm._s(_vm.items.lastPage) +
-                        " "
-                    ),
-                  ]),
-                  _vm._v(" "),
-                  _c("span", { staticClass: "sr-only" }, [_vm._v("(current)")]),
-                ]
-              ),
+                : [
+                    _c("li", { staticClass: "page-item" }, [
+                      _c(
+                        "a",
+                        {
+                          staticClass: "page-link",
+                          attrs: { href: "javascript:void(0);" },
+                          on: {
+                            click: function ($event) {
+                              return _vm.gotoPage(link.url)
+                            },
+                          },
+                        },
+                        [
+                          _c("span", {
+                            domProps: { innerHTML: _vm._s(link.label) },
+                          }),
+                        ]
+                      ),
+                    ]),
+                  ],
             ]
-          ),
-          _vm._v(" "),
-          _vm.items.hasMorePages
-            ? [
-                _c(
-                  "li",
-                  {
-                    staticClass: "page-item",
-                    attrs: { "aria-label": _vm.items.nextPage },
-                  },
-                  [
-                    _c(
-                      "a",
-                      {
-                        staticClass: "page-link",
-                        attrs: { href: "javascript:void(0);", rel: "next" },
-                        on: { click: _vm.nextPage },
-                      },
-                      [_vm._v("Next")]
-                    ),
-                  ]
-                ),
-                _vm._v(" "),
-                _c(
-                  "li",
-                  {
-                    staticClass: "page-item",
-                    attrs: { "aria-label": _vm.items.lastPage },
-                  },
-                  [
-                    _c(
-                      "a",
-                      {
-                        staticClass: "page-link",
-                        attrs: { href: "javascript:void(0);", rel: "next" },
-                        on: { click: _vm.lastPage },
-                      },
-                      [_vm._v("Last")]
-                    ),
-                  ]
-                ),
-              ]
-            : [_vm._m(2), _vm._v(" "), _vm._m(3)],
+          }),
         ],
         2
       )
     : _vm._e()
 }
-var staticRenderFns = [
-  function () {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c(
-      "li",
-      { staticClass: "page-item disabled", attrs: { "aria-disabled": "true" } },
-      [
-        _c(
-          "a",
-          {
-            staticClass: "page-link",
-            attrs: { href: "javascript:void(0);", rel: "prev" },
-          },
-          [_vm._v("First")]
-        ),
-      ]
-    )
-  },
-  function () {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c(
-      "li",
-      { staticClass: "page-item disabled", attrs: { "aria-disabled": "true" } },
-      [
-        _c(
-          "a",
-          {
-            staticClass: "page-link",
-            attrs: { href: "javascript:void(0);", rel: "prev" },
-          },
-          [_vm._v("Previous")]
-        ),
-      ]
-    )
-  },
-  function () {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c(
-      "li",
-      { staticClass: "page-item disabled", attrs: { "aria-disabled": "true" } },
-      [
-        _c(
-          "a",
-          {
-            staticClass: "page-link",
-            attrs: { href: "javascript:void(0);", rel: "next" },
-          },
-          [_vm._v("Next")]
-        ),
-      ]
-    )
-  },
-  function () {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c(
-      "li",
-      { staticClass: "page-item disabled", attrs: { "aria-disabled": "true" } },
-      [
-        _c(
-          "a",
-          {
-            staticClass: "page-link",
-            attrs: { href: "javascript:void(0);", rel: "next" },
-          },
-          [_vm._v("Last")]
-        ),
-      ]
-    )
-  },
-]
+var staticRenderFns = []
 render._withStripped = true
 
 

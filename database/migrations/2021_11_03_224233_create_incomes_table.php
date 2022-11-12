@@ -23,6 +23,26 @@ class CreateIncomesTable extends Migration
             $table->decimal('amount',21,2)->default(0.00);
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('income_type_id')
+                  ->references('id')
+                  ->on('income_types')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('branch_id')
+                  ->references('id')
+                  ->on('branches')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('user_id')
+                  ->references('id')
+                  ->on('users')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

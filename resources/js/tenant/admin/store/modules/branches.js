@@ -7,17 +7,17 @@ export default {
         branches: [],
     },
     getters: {
-        GET_BRANCHES: (state) => {
+        GET_BRANCHES(state) {
             return state.branches;
         }
     },
     mutations: {
-        SET_BRANCHES: (state, payload) => {
+        SET_BRANCHES(state, payload) {
             state.branches = payload || [];
         }
     },
     actions: {
-        GET_BRANCHES: async ({commit}) => {
+        async GET_BRANCHES({commit}) {
             try {
                 let response = await httpClient.get(endPoints.BRANCHES);
                 commit("SET_BRANCHES", response.data);
@@ -26,7 +26,7 @@ export default {
                 return Promise.reject(error.response.data);
             }
         },
-        SAVE_BRANCH: async ({commit}, payload) => {
+        async SAVE_BRANCH({commit}, payload) {
             try {
                 let response;
                 if (!!payload.id) {
@@ -41,7 +41,7 @@ export default {
                 return Promise.reject(error.response.data);
             }
         },
-        DELETE_BRANCH: async ({commit}, payload) => {
+        async DELETE_BRANCH({commit}, payload) {
             try {
                 let response = await httpClient.delete(endPoints.BRANCHES + '/' + payload.id);
                 return Promise.resolve(response.data);
@@ -49,7 +49,7 @@ export default {
                 return Promise.reject(error.response.data);
             }
         },
-        LOCK_BRANCH: async ({commit}, payload) => {
+        async LOCK_BRANCH({commit}, payload) {
             try {
                 let response = await httpClient.patch(endPoints.BRANCHES + '/' + payload.id + '/lock', payload);
                 return Promise.resolve(response.data);
@@ -57,7 +57,7 @@ export default {
                 return Promise.reject(error.response.data);
             }
         },
-        UNLOCK_BRANCH: async ({commit}, payload) => {
+        async UNLOCK_BRANCH({commit}, payload) {
             try {
                 let response = await httpClient.patch(endPoints.BRANCHES + '/' + payload.id + '/unlock', payload);
                 return Promise.resolve(response.data);

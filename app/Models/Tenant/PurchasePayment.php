@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
- * Class PurchasePayable
+ * Class PurchasePayment
  * @package App\Models
  * @property int id
  * @property int tenant_id
@@ -18,28 +18,20 @@ use Illuminate\Support\Carbon;
  * @property int supplier_id
  * @property int branch_id
  * @property double amount
- * @property double paid
- * @property string status
- * @property Carbon paid_at
- * @property Carbon due_date
- * @property Carbon settled_at
+ * @property Carbon transaction_date
  * @property Carbon created_at
  * @property Carbon updated_at
  * @property Carbon deleted_at
  */
-class PurchasePayable extends Model
+class PurchasePayment extends Model
 {
     use SoftDeletes, Commentable;
 
-    protected $table = 'purchase_payables';
+    protected $table = 'purchase_payments';
 
-    protected $dates = ['deleted_at', 'due_date', 'settled_at', 'paid_at'];
+    protected $dates = ['deleted_at', 'transaction_date'];
 
     protected $guarded = [];
-
-    const STATUS_PENDING = 'pending';
-    const STATUS_PARTIAL = 'partial';
-    const STATUS_SETTLED = 'settled';
 
     public function purchase()
     {
@@ -61,18 +53,8 @@ class PurchasePayable extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function scopeUnsettled(Builder $query)
-    {
-        return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_PARTIAL]);
+    public function journal_entry() {
+        return $this->morphOne(JournalEntry::class, 'transactable');
     }
 
-    public function scopeSettled(Builder $query)
-    {
-        return $query->where('status', self::STATUS_SETTLED);
-    }
-
-    public function balance()
-    {
-        return $this->amount - $this->paid;
-    }
 }

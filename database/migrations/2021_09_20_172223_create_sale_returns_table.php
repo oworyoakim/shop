@@ -22,14 +22,14 @@ class CreateSaleReturnsTable extends Migration
             $table->unsignedBigInteger('branch_id');
             $table->unsignedBigInteger('sale_id');
             $table->unsignedBigInteger('item_id');
-            $table->timestamp('returned_at');
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('customer_id')->nullable();
-            $table->decimal('quantity',10,2)->default(0.00);
-            $table->decimal('price',21,2)->default(0.00);
-            $table->decimal('gross_amount', 21, 2)->default(0.00);
-            $table->decimal('vat_amount', 21, 2)->default(0.00);
-            $table->decimal('net_amount', 21, 2)->default(0.00);
+            $table->timestamp('returned_at');
+            $table->decimal('quantity',10,2);
+            $table->decimal('price',21,2);
+            $table->decimal('amount', 21, 2);
+            $table->decimal('vat', 5, 2)->default(0.00);
+            $table->decimal('discount', 5, 2)->default(0.00);
             $table->decimal('paid_amount', 21, 2)->default(0.00);
             $table->decimal('due_amount', 21, 2)->default(0.00);
             $table->timestamp('due_date')->nullable();
@@ -41,6 +41,36 @@ class CreateSaleReturnsTable extends Migration
             ])->default(SaleReturn::STATUS_SETTLED);
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('branch_id')
+                  ->references('id')
+                  ->on('branches')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('sale_id')
+                  ->references('id')
+                  ->on('sales')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('item_id')
+                  ->references('id')
+                  ->on('items')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('user_id')
+                  ->references('id')
+                  ->on('users')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('customer_id')
+                  ->references('id')
+                  ->on('customers')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

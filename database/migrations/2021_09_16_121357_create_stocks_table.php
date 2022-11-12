@@ -35,6 +35,22 @@ class CreateStocksTable extends Migration
             ])->default(Stock::STATUS_ACTIVE);
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('branch_id')
+                  ->references('id')
+                  ->on('branches')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreign('item_id')
+                  ->references('id')
+                  ->on('items')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

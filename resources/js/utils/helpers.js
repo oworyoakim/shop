@@ -47,3 +47,7 @@ export function createFormDataFromPayload(payload = {}){
     }
     return formData;
 }
+//to round down to nearest hundreds
+export function toNearestHundredsLower(num) {
+    return Math.floor(num / 100) * 100;
+}

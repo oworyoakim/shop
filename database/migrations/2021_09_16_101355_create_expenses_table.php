@@ -20,7 +20,7 @@ class CreateExpensesTable extends Migration
             $table->id();
             $table->unsignedBigInteger('tenant_id');
             $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('expense_type_id');
+            $table->unsignedBigInteger('expense_category_id');
             $table->unsignedBigInteger('branch_id')->nullable();
             $table->timestamp('requested_at');
             $table->string('barcode')->unique();
@@ -38,6 +38,29 @@ class CreateExpensesTable extends Migration
             $table->text('comment')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreign('expense_category_id')
+                  ->references('id')
+                  ->on('expense_categories')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreign('user_id')
+                  ->references('id')
+                  ->on('users')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->foreign('branch_id')
+                  ->references('id')
+                  ->on('branches')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

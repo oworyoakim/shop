@@ -19,10 +19,8 @@ class CreateCategoriesTable extends Migration
             $table->id();
             $table->unsignedBigInteger('tenant_id');
             $table->string('title');
-            $table->string('slug');
             $table->text('description')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->unique(['tenant_id', 'slug'], 'tenant_id_category_slug_unique');
             $table->timestamps();
             $table->softDeletes();
         });

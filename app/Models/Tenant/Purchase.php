@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
  * Class Purchase
  * @package App/Models
  * @property int id
- * @property string transcode
+ * @property string barcode
  * @property  int user_id
  * @property  int tenant_id
  * @property  int branch_id
@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
  * @property string status
  * @property  string payment_status
  * @property  string receipt
- * @property  Carbon transact_date
+ * @property  Carbon transaction_date
  * @property  Carbon created_at
  * @property  Carbon updated_at
  * @property  Carbon deleted_at
@@ -37,7 +37,7 @@ class Purchase extends Model
 {
     use SoftDeletes, Commentable;
     protected $table = 'purchases';
-    protected $dates = ['deleted_at', 'purchased_at'];
+    protected $dates = ['deleted_at', 'transaction_date'];
 
     protected $guarded = [];
 
@@ -107,23 +107,9 @@ class Purchase extends Model
         return $this->hasOne(PurchaseReturn::class, 'purchase_id');
     }
 
-    public function payable()
+    public function payments()
     {
-        return $this->hasOne(PurchasePayable::class, 'purchase_id');
-    }
-
-    public function paidAmount()
-    {
-        if ($this->payable)
-        {
-            return $this->net_amount - $this->payable->amount + $this->payable->paid;
-        }
-        return $this->net_amount;
-    }
-
-    public function dueAmount()
-    {
-        return $this->net_amount - $this->paidAmount();
+        return $this->hasMany(PurchasePayment::class, 'purchase_id');
     }
 
     public function user()
@@ -160,13 +146,6 @@ class Purchase extends Model
                     }, 0);
     }
 
-    public function discountAmountAfterReturns()
-    {
-        $amount = $this->grossAmountAfterReturns();
-        $discount = round($amount * $this->discount_rate / 100, 0);
-
-        return $discount;
-    }
 
     public function taxAmountAfterReturns()
     {
@@ -181,8 +160,6 @@ class Purchase extends Model
     public function netAmountAfterReturns()
     {
         $amount = $this->grossAmountAfterReturns();
-        $discount = $this->discountAmountAfterReturns();
-        $amount -= $discount;
         $tax = round($amount * $this->vat_rate / 100, 0);
         return $amount - $tax;
     }
@@ -191,13 +168,6 @@ class Purchase extends Model
     {
         $amount = $this->netAmountAfterReturns();
         return $amount - $this->paid_amount;
-    }
-
-    public static function generateTransactionCode(User $user)
-    {
-        $time = time();
-        $code = "{$user->tenant_id}{$time}{$user->id}";
-        return $code;
     }
 
 }

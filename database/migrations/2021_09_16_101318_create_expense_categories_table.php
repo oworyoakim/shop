@@ -15,13 +15,18 @@ class CreateExpenseCategoriesTable extends Migration
     public function up()
     {
         Schema::create($this->table, function (Blueprint $table) {
-            $table->increments('id');
-            $table->unsignedBigInteger('tenant_id')->index();
+            $table->id();
+            $table->unsignedBigInteger('tenant_id');
             $table->string('title');
             $table->text('description')->nullable();
             $table->unsignedInteger('user_id')->index()->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

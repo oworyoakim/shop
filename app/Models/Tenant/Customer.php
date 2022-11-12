@@ -52,6 +52,6 @@ class Customer extends Model
     }
 
     public function receivables() {
-        return $this->hasMany(SaleReceivable::class);
+        return $this->hasMany(SalePayment::class);
     }
 }

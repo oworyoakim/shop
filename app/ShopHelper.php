@@ -9,12 +9,14 @@ use App\Models\Tenant\ItemStock;
 use App\Models\Tenant\Sale;
 use App\Models\Tenant\Stock;
 use App\Models\Tenant\Setting;
+use App\Models\Tenant\User;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ShopHelper
 {
@@ -28,30 +30,30 @@ class ShopHelper
      */
     public static function createTenant(array $data)
     {
-        return DB::transaction(function () use ($data) {
-            $attributes = Arr::except($data, ['username', 'password']);
-            Log::info("Creating Tenant", $attributes);
-            // create the tenant
-            $tenant = Tenant::query()->create($attributes);
-            Log::info("Created Tenant", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
-            //dd($tenant);
-            Log::info("Seed Tenant Settings", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
-            // update settings
-            $tenant->updateSettings();
-            Log::info("Seed tenant leagues ratings", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
-            // seed suppliers
-            $tenant->seedSuppliers();
-            // seed customers
-            $tenant->seedCustomers();
-            // seed GLAs
-            $tenant->seedGeneralLedgerAccounts();
-            // seed expense categories and subcategories
-            $tenant->seedExpenseCategoriesAndSubCategories();
-            // create tenant admin user
-            $tenant->createAdminUser($data['password']);
-            // return the created tenant
-            return $tenant;
-        });
+        $attributes = Arr::except($data, ['username', 'password']);
+        Log::info("Creating Tenant", $attributes);
+        // create the tenant
+        $tenant = Tenant::query()->updateOrCreate(Arr::only($attributes, ['subdomain']), Arr::except($attributes, ['subdomain']));
+        Log::info("Created Tenant", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
+        //dd($tenant);
+        Log::info("Seed Tenant Settings", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
+        // update settings
+        $tenant->updateSettings();
+        Log::info("Seed tenant leagues ratings", ['tenant_id' => $tenant->id, 'subdomain' => $tenant->subdomain]);
+        // seed suppliers
+        $tenant->seedSuppliers();
+        // seed customers
+        $tenant->seedCustomers();
+        // seed items
+        $tenant->seedCategoriesAndItems();
+        // seed GLAs
+        $tenant->seedGeneralLedgerAccounts();
+        // seed expense categories and subcategories
+        $tenant->seedExpenseCategoriesAndSubCategories();
+        // create tenant admin user
+        $tenant->createAdminUser($data['password']);
+        // return the created tenant
+        return $tenant;
     }
 
     /**
@@ -113,6 +115,22 @@ class ShopHelper
 
     public static function toNearestHundredsUpper($num) {
         return ceil($num / 100) * 100;
+    }
+
+    public static function generateTransactionCode(User $user)
+    {
+        $code = random_int(1000, 9999);
+        $time = time();
+        $code = "{$user->tenant_id}{$user->branch_id}{$code}{$time}{$user->id}";
+        return $code;
+    }
+
+    public static function generateBarcode($tenant_id, $category_id)
+    {
+        $str = Str::random(3);
+        $code = random_int(100, 999);
+        $barcode = "{$tenant_id}{$str}{$code}{$category_id}";
+        return Str::upper($barcode);
     }
 
     public static function getItemByBarcode(string $barcode)
@@ -299,5 +317,32 @@ class ShopHelper
             $builder->where('branch_id', $branch_id);
         }
         return $builder->sum('net_amount');
+    }
+
+    public static function getAmenitiesQuery($tenant_id, $items)
+    {
+        $pids = "";
+
+        if(empty($items)) {
+            return $pids;
+        }
+
+        $itemsExploded = explode(",", $items);
+
+        $purchasesQuery = DB::table('purchase_items', 'pa')
+                            ->selectRaw("distinct pa.purchase_id")
+                            ->where('pa.tenant_id', '=', $tenant_id);
+
+        foreach($itemsExploded as $index => $item_id)
+        {
+            $purchasesQuery->join("purchase_items as pa{$index}", function ($join) use ($tenant_id, $item_id, $index){
+                $join->on('pa.tenant_id', '=', "pa{$index}.tenant_id")
+                     ->on('pa.purchase_id', '=', "pa{$index}.purchase_id")
+                     ->where("pa{$index}.tenant_id", '=', $tenant_id)
+                     ->where("pa{$index}.item_id", '=', $item_id);
+            });
+        }
+        $pids = $purchasesQuery->toSql();
+        return $pids;
     }
 }

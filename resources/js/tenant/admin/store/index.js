@@ -11,14 +11,25 @@ import globalGetters from "../../../shared/store/getters";
 import globalMutations from "../../../shared/store/mutations";
 import globalActions from "../../../shared/store/actions";
 import branches from "./modules/branches";
+import stocks from "./modules/stocks";
+import purchases from "./modules/purchases";
 
 export default new Vuex.Store({
     modules: {
         branches,
+        stocks,
+        purchases,
     },
     state: {
         ...globalState,
         user: null,
+        formOptions: {
+            units: [],
+            categories: [],
+            suppliers: [],
+            customers: [],
+            branches: [],
+        },
     },
     getters: {
         ...globalGetters,
@@ -35,11 +46,17 @@ export default new Vuex.Store({
                 return !!state.user && permissions.some((permission) => !!state.user.permissions[permission]);
             }
         },
+        FORM_OPTIONS(state){
+            return state.formOptions;
+        },
     },
     mutations: {
         ...globalMutations,
         SET_LOGGED_IN_USER (state, payload)  {
             state.user = payload || null;
+        },
+        SET_FORM_OPTIONS(state, payload){
+          state.formOptions = payload;
         },
     },
     actions: {

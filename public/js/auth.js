@@ -2626,7 +2626,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "deepClone": () => (/* binding */ deepClone),
 /* harmony export */   "isEqual": () => (/* binding */ isEqual),
 /* harmony export */   "prepareQueryParams": () => (/* binding */ prepareQueryParams),
-/* harmony export */   "resolveError": () => (/* binding */ resolveError)
+/* harmony export */   "resolveError": () => (/* binding */ resolveError),
+/* harmony export */   "toNearestHundredsLower": () => (/* binding */ toNearestHundredsLower)
 /* harmony export */ });
 /* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
 /* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(lodash__WEBPACK_IMPORTED_MODULE_0__);
@@ -2684,6 +2685,10 @@ function createFormDataFromPayload() {
   }
 
   return formData;
+} //to round down to nearest hundreds
+
+function toNearestHundredsLower(num) {
+  return Math.floor(num / 100) * 100;
 }
 
 /***/ }),

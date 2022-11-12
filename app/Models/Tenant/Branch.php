@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use App\Models\Landlord\Tenant;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,6 +13,7 @@ use Illuminate\Support\Carbon;
  * Class Branch
  * @package App\Models
  * @property int id
+ * @property int general_ledger_account_id
  * @property int tenant_id
  * @property string name
  * @property string email
@@ -50,6 +52,16 @@ class Branch extends Model
         static::addGlobalScope(new TenantScope);
     }
 
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id');
+    }
+
+    public function general_ledger_account()
+    {
+        return $this->belongsTo(GeneralLedgerAccount::class, 'general_ledger_account_id');
+    }
+
     public function suppliers()
     {
         return $this->hasMany(Supplier::class);
@@ -82,12 +94,12 @@ class Branch extends Model
 
     public function receivables()
     {
-        return $this->hasMany(SaleReceivable::class, 'branch_id');
+        return $this->hasMany(SalePayment::class, 'branch_id');
     }
 
-    public function payables()
+    public function purchase_payments()
     {
-        return $this->hasMany(PurchasePayable::class, 'branch_id');
+        return $this->hasMany(PurchasePayment::class, 'branch_id');
     }
 
     public function employees()
@@ -100,24 +112,12 @@ class Branch extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function tenant()
-    {
-        return $this->belongsTo(User::class, 'tenant_id');
-    }
-
     /**
      * @return User|null
      */
     public function manager()
     {
-        foreach ($this->employees as $employee)
-        {
-            if ($employee->group === User::TYPE_MANAGERS)
-            {
-                return $employee;
-            }
-        }
-        return null;
+        return $this->employees()->where('group', User::TYPE_MANAGERS)->first();
     }
 
     /**
@@ -127,432 +127,5 @@ class Branch extends Model
     {
         return !!$this->active;
     }
-
-
-    /**************     SALES HELPERS                 ******/
-
-
-    public function overallSales()
-    {
-        return $this->sales()->uncanceled();
-    }
-
-    public function overallTotalSales()
-    {
-        return $this->overallSales()->sum('net_amount');
-    }
-
-
-    public function daysSales($date)
-    {
-        return $this->overallSales()->whereDate('transaction_date', $date);
-    }
-
-
-    public function daysReceivables($date)
-    {
-        return $this->receivables()->whereDate('transaction_date', $date);
-    }
-
-
-    public function daysTotalReceivables($date)
-    {
-        return $this->daysReceivables($date)
-                    ->get()
-                    ->reduce(function (SaleReceivable $receivable, $amount) {
-                        return $amount + $receivable->balance();
-                    }, 0);
-    }
-
-
-    public function daysTotalSales($date)
-    {
-        return $this->daysSales($date)->sum('net_amount');
-    }
-
-    public function monthsSales($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->overallSales()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-
-    public function monthsTotalSales($date)
-    {
-        return $this->monthsSales($date)->sum('net_amount');
-    }
-
-    public function monthsReceivables($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->receivables()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsTotalReceivables($date)
-    {
-        return $this->monthsReceivables($date)
-                    ->get()
-                    ->reduce(function (SaleReceivable $receivable, $amount) {
-                        return $amount + $receivable->balance();
-                    }, 0);
-    }
-
-    public function daysTotalSalesTax($date)
-    {
-        return $this->daysSales($date)->sum('vat_amount');
-    }
-
-    public function monthsTotalSalesTax($date)
-    {
-        return $this->monthsSales($date)->sum('vat_amount');
-    }
-
-    public function daysTotalSalesDiscount($date)
-    {
-        return $this->daysSales($date)->sum('discount_amount');
-    }
-
-    public function monthsTotalSalesDiscount($date)
-    {
-        return $this->monthsSales($date)->sum('discount_amount');
-    }
-
-    public function canceledSales()
-    {
-        return $this->sales()->canceled();
-    }
-
-    public function daysSalesCancelled($date)
-    {
-        return $this->canceledSales()->whereDate('transaction_date', $date);
-    }
-
-    public function daysTotalSalesCancelled($date)
-    {
-        return $this->daysSalesCancelled($date)->sum('net_amount');
-    }
-
-    public function monthsSalesCancelled($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->canceledSales()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsTotalSalesCancelled($date)
-    {
-        return $this->monthsSalesCancelled($date)->sum('net_amount');
-    }
-
-    public function daysSalesReturned($date)
-    {
-        return $this->sales()
-                    ->returned()
-                    ->whereDate('transaction_date', $date);
-    }
-
-    public function daysTotalSalesReturned($date)
-    {
-        return $this->daysSalesReturned($date)
-                    ->get()
-                    ->reduce(function (Sale $sale, $amount) {
-                        return $amount + $sale->returnsInwards();
-                    }, 0);
-    }
-
-    public function monthsSalesReturned($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->sales()
-                    ->returned()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsTotalSalesReturned($date)
-    {
-        return $this->monthsSalesReturned($date)
-                    ->get()
-                    ->reduce(function (Sale $sale, $amount) {
-                        return $amount + $sale->returnsInwards();
-                    }, 0);
-    }
-
-    public function latestSales()
-    {
-        return $this->overallSales()
-                    ->latest()
-                    ->take(5);
-    }
-
-    /**************   END SALES    HELPERS     ***********/
-
-
-    /**************   PURCHASES HELPERS         ***********/
-
-    public function overallPurchases()
-    {
-        return $this->purchases()->uncanceled();
-    }
-
-    public function overallTotalPurchases()
-    {
-        return $this->overallPurchases()->sum('net_amount');
-    }
-
-
-    public function daysPurchases($date)
-    {
-        return $this->overallPurchases()
-                    ->whereDate('transaction_date', $date);
-    }
-
-    public function daysTotalPurchases($date)
-    {
-        return $this->daysPurchases($date)->sum('net_amount');
-    }
-
-    public function monthsPurchases($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->overallPurchases()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsTotalPurchases($date)
-    {
-        return $this->monthsPurchases($date)->sum('net_amount');
-    }
-
-    public function daysPayables($date)
-    {
-        return $this->payables()->whereDate('transaction_date', $date);
-    }
-
-    public function daysTotalPayables($date)
-    {
-        return $this->daysPayables($date)
-                    ->get()
-                    ->reduce(function (PurchasePayable $payable, $amount) {
-                        return $amount + $payable->balance();
-                    }, 0);
-    }
-
-    public function monthsPayables($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->payables()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsTotalPayables($date)
-    {
-        return $this->monthsPayables($date)
-                    ->get()
-                    ->reduce(function (PurchasePayable $payable, $amount) {
-                        return $amount + $payable->balance();
-                    }, 0);
-    }
-
-    public function overallTotalPayables()
-    {
-        return $this->payables()
-                    ->get()
-                    ->reduce(function (PurchasePayable $payable, $amount) {
-                        return $amount + $payable->balance();
-                    }, 0);
-    }
-
-    public function daysTotalPurchaseTax($date)
-    {
-        return $this->daysPurchases($date)->sum('vat_amount');
-    }
-
-    public function monthsTotalPurchasesTax($date)
-    {
-        return $this->monthsPurchases($date)->sum('vat_amount');
-    }
-
-    public function daysTotalPurchaseDiscount($date)
-    {
-        return $this->daysPurchases($date)->sum('discount_amount');
-    }
-
-    public function monthsTotalPurchasesDiscount($date)
-    {
-        return $this->monthsPurchases($date)->sum('discount_amount');
-    }
-
-    public function daysPurchasesCancelled($date)
-    {
-        return $this->purchases()
-                    ->canceled()
-                    ->whereDate('transaction_date', $date);
-    }
-
-    public function daysTotalPurchasesCancelled($date)
-    {
-        return $this->daysPurchasesCancelled($date)->sum('net_amount');
-    }
-
-
-    public function monthsPurchasesCancelled($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->purchases()
-                    ->canceled()
-                    ->whereYear('transaction_date', '=', $year)
-                    ->whereMonth('transaction_date', '=', $month);
-    }
-
-    public function monthsTotalPurchasesCancelled($date)
-    {
-        return $this->monthsPurchasesCancelled($date)->sum('net_amount');
-    }
-
-    public function daysPurchasesReturned($date)
-    {
-        return $this->purchases()
-                    ->returned()
-                    ->whereDate('transaction_date', $date);
-    }
-
-    public function daysTotalPurchasesReturned($date)
-    {
-        return $this->daysPurchasesReturned($date)
-                    ->get()
-                    ->reduce(function (Purchase $purchase, $amount) {
-                        return $amount + $purchase->returnsOutwards();
-                    }, 0);
-    }
-
-    public function monthsPurchasesReturned($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->purchases()
-                    ->returned()
-                    ->whereYear('transaction_date', $year)
-                    ->whereMonth('transaction_date', $month);
-    }
-
-    public function monthsTotalPurchasesReturned($date)
-    {
-        return $this->monthsPurchasesReturned($date)
-                    ->get()
-                    ->reduce(function (Purchase $purchase, $amount) {
-                        return $amount + $purchase->returnsOutwards();
-                    }, 0);
-    }
-
-    public function latestPurchases()
-    {
-        return $this->purchases()
-                    ->uncanceled()
-                    ->latest()
-                    ->take(5);
-    }
-
-    /**************   END PURCHASES    HELPERS     ***********/
-
-
-    /**************   EXPENSES HELPERS         ***********/
-
-    public function overallExpenses()
-    {
-        return $this->expenses()->uncanceled();
-    }
-
-    public function overallTotalExpenses()
-    {
-        return $this->overallExpenses()->sum('approved_amount');
-    }
-
-    public function daysExpenses($date)
-    {
-        return $this->overallExpenses()
-                    ->whereDate('expense_date', $date);
-    }
-
-    public function daysTotalExpenses($date)
-    {
-        return $this->daysExpenses($date)->sum('approved_amount');
-    }
-
-    public function monthsExpenses($date)
-    {
-        $year = Carbon::parse($date)->year;
-        $month = Carbon::parse($date)->month;
-        return $this->overallExpenses()
-                    ->whereYear('expense_date', $year)
-                    ->whereMonth('expense_date', $month);
-    }
-
-    public function monthsTotalExpenses($date)
-    {
-        return $this->monthsExpenses($date)->sum('approved_amount');
-    }
-
-    public function daysTotalExpensesTax($date)
-    {
-        return $this->daysExpenses($date)->sum('vat_amount');
-    }
-
-    public function monthsTotalExpensesTax($date)
-    {
-        return $this->monthsExpenses($date)->sum('vat_amount');
-    }
-
-    public function latestExpenses()
-    {
-        return $this->overallExpenses()
-                    ->latest()
-                    ->take(5);
-    }
-
-    /**************    END EXPENSES HELPERS         ***********/
-
-
-    public function getDetails() {
-        $branch = new \stdClass();
-        $branch->id = $this->id;
-        $branch->name = $this->name;
-        $branch->phone = $this->phone;
-        $branch->email = $this->email;
-        $branch->country = $this->country;
-        $branch->city = $this->city;
-        $branch->address = $this->address;
-        $branch->balance = $this->balance;
-
-        $branch->manager = null;
-
-        $manager = $this->manager();
-        if($manager){
-            $branch->manager = new \stdClass();
-            $branch->manager->id = $manager->id;
-            $branch->manager->firstName = $manager->first_name;
-            $branch->manager->lastName = $manager->last_name;
-            $branch->manager->fullName = $manager->fullName();
-            $branch->manager->email = $manager->email;
-            $branch->manager->balance = $manager->getBalance();
-        }
-
-        return $branch;
-    }
-
 
 }

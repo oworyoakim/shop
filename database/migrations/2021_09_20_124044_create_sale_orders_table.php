@@ -23,18 +23,35 @@ class CreateSaleOrdersTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->string('order_code')->unique();
             $table->timestamp('order_date');
-            $table->decimal('gross_amount',21,2)->default(0.00);
-            $table->decimal('vat_rate',5,2)->default(0.00);
-            $table->decimal('vat_amount',21,2)->default(0.00);
-            $table->decimal('discount_rate',5,2)->default(0.00);
-            $table->decimal('discount_amount',21,2)->default(0.00);
-            $table->decimal('net_amount',21,2)->default(0.00);
+            $table->decimal('amount',21,2)->default(0.00);
+            $table->decimal('vat',5,2)->default(0.00);
+            $table->decimal('discount',5,2)->default(0.00);
             $table->enum('status', [
                 SaleOrder::STATUS_PENDING,
                 SaleOrder::STATUS_COMPLETED
             ])->default(SaleOrder::STATUS_COMPLETED);
             $table->timestamps();
             $table->softDeletes();
+            $table->foreign('tenant_id')
+                  ->references('id')
+                  ->on('tenants')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('customer_id')
+                  ->references('id')
+                  ->on('customers')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('branch_id')
+                  ->references('id')
+                  ->on('branches')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
+            $table->foreign('user_id')
+                  ->references('id')
+                  ->on('users')
+                  ->restrictOnDelete()
+                  ->cascadeOnUpdate();
         });
     }
 

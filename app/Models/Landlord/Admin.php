@@ -77,4 +77,8 @@ class Admin extends Authenticatable
 
         return $user;
     }
+
+    public function getUserId(){
+        return $this->id;
+    }
 }
